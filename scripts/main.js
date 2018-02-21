@@ -128,7 +128,7 @@ function main(){//intialise everything
     toggleShowInfo(showTheInfo);
     setInfoHeight();
     setDataByLang(nowLanguage);//set all info
-    setLanguage();//set change language buttons clicks in right menu
+    // setLanguage();//set change language buttons clicks in right menu
     highlightLanguage(nowLanguage);//highlight choosen language
     // prepareLocationList();
     setLocationList();
@@ -262,6 +262,7 @@ function setLanguage(){
 
 
 
+
 //set clicks in this menu according to the info you got
 function setButtonClicks(steps){
     let theId = "item1";//this will be needed to get the value of new step, because every button ti change step contains the number of step
@@ -349,7 +350,9 @@ function setMap(lat,lon){
     map = new google.maps.Map(document.getElementById('map'), {
         zoom: 12,
         center: uluru,
-        mapTypeControl: false
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false
     });//create map
     myMarker = new google.maps.Marker({
         position: uluru,
@@ -837,11 +840,12 @@ class Languages extends React.Component{
     //TODO set clicks
 
     render(){
+        // console.log(this.props.setLanguage)
         return <div class = "languages">
-                        <p><a class="changeLang pointable" id="en">EN</a></p>
-                        <p><a class="changeLang pointable" id="ru">RU</a></p>
-                        <p><a class="changeLang pointable" id="he">HE</a></p>
-                        <p><a class="changeLang pointable" id="fr">FR</a></p>     
+                        <p><a class="changeLang pointable" onClick={()=>{this.props.setLanguage("en")}} id="en">EN</a></p>
+                        <p><a class="changeLang pointable" onClick={()=>{this.props.setLanguage("ru")}} id="ru">RU</a></p>
+                        <p><a class="changeLang pointable" onClick={()=>{this.props.setLanguage("he")}} id="he">HE</a></p>
+                        <p><a class="changeLang pointable" onClick={()=>{this.props.setLanguage("fr")}} id="fr">FR</a></p>     
                     </div>;
     }
 }
@@ -868,17 +872,7 @@ class SofaHorizScrollMenuBody extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            stepNames: [
-                "Teudat Zehut",
-                "Opening a bank account",
-                "Registration in a Health Fund",
-                "Аbsorption basket and  Hebrew ulpan",
-                "Kindergarten / school",
-                "Housing",
-                "Apply for the arnona discount",
-                "Confirm the education",
-                "Converting a Driver's License"
-            ]
+            stepNames: this.props.stepNames
         }
     }
 
@@ -895,6 +889,8 @@ class SofaHorizScrollMenuBody extends React.Component{
     }
 
     render(){
+        console.log("drawing horiz scroll");
+        // console.log(this.state.stepNames)
         return <section class="sofa-horiz">
                 {this.state.stepNames.map(this.eachStepName)}
                 <a id="item-filler"></a>
@@ -912,8 +908,8 @@ class HorizScrollButtonHolder extends React.Component{
 
     render(){
         return <section class="scrollbutton-holder">
-                    <a class="scroll-back"><h1>{"<"}</h1></a>
-                    <a class="scroll-forward"><h1>{">"}</h1></a>
+                    <a class="scroll-back pointable"><h1>{"<"}</h1></a>
+                    <a class="scroll-forward pointable"><h1>{">"}</h1></a>
                 </section>
     }
 }
@@ -970,6 +966,7 @@ class InfoOfStep extends React.Component{
     updateStepNeedText = (newStepNeedText) => {this.setState({stepNeedText: newStepNeedText})};
 
     render(){
+        console.log("drawing info of step")
         return <div class="info-of-step"  style={{"font-size":this.props.textSize+"em"}}>
                     <div class="description-text">{this.state.descriptionText}</div>
                     <div class="step-need">{this.state.stepNeedText}</div>
@@ -1068,7 +1065,7 @@ class SofaContent extends React.Component{
         return <div class="sofa-row main-section">
                     <div class="sofa-content">
                         <div class="empty_column"></div>
-                        <SofaHorizScrollMenu/>
+                        <SofaHorizScrollMenu stepNames={this.props.stepNames}/>
                         <SofaHoldInfo textSize={this.props.textSize}/>
                     </div>
                 </div>
@@ -1083,7 +1080,7 @@ class SofaHorizScrollMenu extends React.Component{
 
     render(){
         return <section class="scroll-horiz main-section">
-                    <SofaHorizScrollMenuBody/>
+                    <SofaHorizScrollMenuBody stepNames={this.props.stepNames}/>
                     <HorizScrollButtonHolder/>
                 </section>
     }
@@ -1096,8 +1093,9 @@ class SideMenu extends React.Component{
     }
 
     render(){
+        // console.log(this.props.setLanguage)
         return <section class="real-side-menu">
-                    <Languages/>
+                    <Languages setLanguage={this.props.setLanguage}/>
                     <TextSize resizeText={this.props.resizeText}/>
                 </section>
     }
@@ -1125,9 +1123,12 @@ class SofaHeader extends React.Component{
     }
 
     render(){
+        // console.log(this.props.setLanguage)
         return <header class="sofa-header">
                     <CasualMenu/>
-                    <SideMenu resizeText={this.props.resizeText}/>
+                    <SideMenu 
+                        resizeText={this.props.resizeText}
+                        setLanguage={this.props.setLanguage}/>
                 </header>
     }
 }
@@ -1146,7 +1147,18 @@ class App extends React.Component{
         constructor(props){
             super(props);
             this.state = {
-                textSize: zoomValue
+                textSize: 1,
+                stepNames: [
+                    "Teudat Zehut",
+                    "Opening a bank account",
+                    "Registration in a Health Fund",
+                    "Аbsorption basket and  Hebrew ulpan",
+                    "Kindergarten / school",
+                    "Housing",
+                    "Apply for the arnona discount",
+                    "Confirm the education",
+                    "Converting a Driver's License"
+                ]
             }
         }
     
@@ -1157,14 +1169,27 @@ class App extends React.Component{
 
         textSizeCallback = (inc) =>{
             this.setState({textSize: this.state.textSize+inc});
-            console.log("zoomValue "+this.state.textSize);
         }
+
+        setLanguage = (lang) =>{
+                nowLanguage = lang;//set the nowLanguage global variable
+                setDataByLang(nowLanguage);//set the data according to langugage you chose
+                setLocationList();
+            };
     
         render(){
+            // console.log(this.setLanguage)
             return <div>
                         <LoadingWindow/>
-                        <SofaHeader resizeText={this.textSizeCallback}/>
-                        <SofaContent textSize={this.state.textSize}/>
+                        <SofaHeader 
+                            resizeText={this.textSizeCallback}
+                            setLanguage={this.setLanguage}
+                        />
+                        <SofaContent 
+                            textSize={this.state.textSize}
+                            stepNames={this.state.stepNames}
+                            
+                        />
                     </div>
         }
     }
