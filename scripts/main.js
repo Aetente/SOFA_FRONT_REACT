@@ -1,11 +1,9 @@
 // $().ready(main);
 
-let zoomValue = 1;
 const theUrl = "https://olimshelper.herokuapp.com/";//api
 const MIN_KM=1;
 const MAX_KM = 10;
 const INC = 1;
-let currentStep = 0;//steps
 let stepColors= [
     "#00508c",
     "#35a000",
@@ -17,7 +15,6 @@ let stepColors= [
     "#ba002b",
     "#50008c"
 ];//colors for steps
-let nowLanguage = "en";//current language, english by default
 let lat = 0;//latitude
 let lon = 0;//longitude
 let map = null;//google maps
@@ -98,7 +95,6 @@ let fullLangName = {
 //options for google maps
 var options = {
     enableHighAccuracy: true,
-    // timeout: 5000,
     maximumAge: 0
 };
 let cityList = [];//the list of cities which will appear when geolocation is locked
@@ -120,8 +116,8 @@ function main(){//intialise everything
     });//scroll steps forward
     setInfoHeight();
     // setDataByLang(nowLanguage);//set all info
-    highlightLanguage(nowLanguage);//highlight choosen language
-    setLocationList();
+    // highlightLanguage(nowLanguage);//highlight choosen language
+    // setLocationList("en",0);
 }
 
 function onInfoBtnClick(){
@@ -152,14 +148,6 @@ function toggleShowInfo(toShow){
     }
 }
 
-function setGoToMinesterySiteBtn(){
-    $("#go-to-minestery-site").click(
-        function(){
-            window.open(`http://www.moia.gov.il/${fullLangName[nowLanguage]}`,`_blank`);
-        }
-    )
-}
-
 function setInfoHeight(){
     if(window.innerWidth>767){
         document.getElementsByClassName("step-description")[0].style.gridTemplateColums = 
@@ -186,24 +174,6 @@ function setRightTextAlign(){
 function setLeftTextAlign(){
     $(".info-of-step").css("text-align","left");
     // $(".menu-item p").css("text-align","left");
-}
-
-//set clicks in this menu according to the info you got
-function setButtonClicks(steps){
-    let theId = "item1";//this will be needed to get the value of new step, because every button ti change step contains the number of step
-    for(var i=0;i<9;i++){
-        $("#item"+(i+1)).click(//when button to change step clicked
-            function(){
-                $(".description-help").css("grid-column","1/3");
-                $(".div-to-remove").remove();
-                theId = $(this).attr("id");//get the id of the clicked button
-                currentStep=(+theId.substring(4,theId.length))-1;//change the value of current step
-                setColorHeaderInfo(currentStep);//set color for header of info according to chosen step
-                setInfo(steps,currentStep);//set the info according to the step
-                fillMapWithPlaces(map,nowLanguage,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
-            }
-        );
-    }
 }
 
 //set the color of header of info of step according to chosen step
@@ -258,22 +228,22 @@ function setTitleText(nowLanguage){
     }
 }
 
-function changePosition(lat,lon){
+function changePosition(lat,lon,lang,step){
     myMarker.setPosition({lat:lat,lng:lon});
     map.setCenter({lat:lat,lng:lon});
-    fillMapWithPlaces(map,nowLanguage,currentStep,lat,lon,MIN_KM,MAX_KM,INC);
+    fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);
 }
 
 //if succesided to get geolocation
-function successMap(pos){
+function successMap(pos,lang,step){
     currentCity = "0";
     lat = pos.coords.latitude;
     lon = pos.coords.longitude;
-    setMap(lat,lon);
+    setMap(lat,lon,lang,step);
     
 }
 
-function setMap(lat,lon){
+function setMap(lat,lon,lang,step){
     map = null;
     var icon = {
         url: icons[10], // url
@@ -295,32 +265,18 @@ function setMap(lat,lon){
         icon: icon,
         zIndex: 2
     });//put marker
-    fillMapWithPlaces(map,nowLanguage,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+    fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
 }
 
-function onCityListChange(){
-    let theCurrentCity = listOfCitiesSelect.value;
-    if( theCurrentCity!="0"){
-    // currentCity = listOfCitiesSelect.value;
-        currentCity = theCurrentCity;
-        let coords = currentCity.split("|");
-        lat = +coords[0];
-        lon = +coords[1];
-        changePosition(lat, lon);
-    }
-    else{
-        navigator.geolocation.getCurrentPosition(successMap, errorMap, options);//get location
-    }
-}
-
-function setLocationList(){
-    let urlCurr = theUrl + `${nowLanguage}/city`;
+function setLocationList(lang,step){
+    let urlCurr = theUrl + `${lang}/city`;
     $.ajax({
         url: urlCurr
     })
     .then(
         (data)=>{
             cityList = data;
+            console.log(data)
             $(".hold-list-div").remove();
             let holdListDiv = document.createElement("div");
             holdListDiv.className = "hold-list-div";
@@ -335,8 +291,8 @@ function setLocationList(){
             listOfCitiesSelect.className = "the-list";
 
             let cityOption = document.createElement("option");
-            cityOption.name = myLocationText[nowLanguage];
-            cityOption.innerHTML = myLocationText[nowLanguage];
+            cityOption.name = myLocationText[lang];
+            cityOption.innerHTML = myLocationText[lang];
             cityOption.value = "0";
             listOfCitiesSelect.appendChild(cityOption);
             for(let i=0; i< cityList.length; i++){
@@ -359,10 +315,13 @@ function setLocationList(){
                     let coords = currentCity.split("|");
                     lat = +coords[0];
                     lon = +coords[1];
-                    changePosition(lat, lon);
+                    changePosition(lat, lon,lang,step);
                 }
                 else{
-                    navigator.geolocation.getCurrentPosition(successMap, errorMap, options);//get location
+                    navigator.geolocation.getCurrentPosition(
+                        function(pos){return successMap(pos,lang,step)},
+                        function(err){return errorMap(err,lang,step)}, 
+                        options);//get location
                 }
             }
             controlListDiv.appendChild(listOfCitiesSelect);
@@ -378,12 +337,12 @@ function setLocationList(){
 }
 
 //if geolocation error happened
-function errorMap(err) {
+function errorMap(err,lang,step) {
     console.warn(`ERROR(${err.code}): ${err.message}`);
     // $(".step-description").css("grid-template-columns", "1fr");
     // $(".the-info").css("grid-template-columns","1fr");
     if(!currentCity){
-        let urlCurr = theUrl + `${nowLanguage}/city`;
+        let urlCurr = theUrl + `${lang}/city`;
         $.ajax({
             url: urlCurr
         })
@@ -401,7 +360,7 @@ function errorMap(err) {
                 currentCity = TelAviv.latitude+"|"+TelAviv.longitude;
                 lat = TelAviv.latitude;
                 lon = TelAviv.longitude;
-                setMap(lat,lon);
+                setMap(lat,lon,lang,step);
                 document.getElementsByClassName("the-list")[0].value = currentCity;
                 hideLoading();
             }
@@ -445,10 +404,10 @@ function highlightMarker(n){//highlight the chosen marker
     }
 }
 
-function unhighlightMarkers(){//unhilight all markers
+function unhighlightMarkers(step){//unhilight all markers
     for(let i=0; i<markers.length;i++){
         var icon = {
-            url: icons[currentStep+1], // url
+            url: icons[step+1], // url
             scaledSize: new google.maps.Size(20, 30), // scaled size
             origin: new google.maps.Point(0,0), // origin
             anchor: new google.maps.Point(0, 0) // anchor
@@ -459,7 +418,7 @@ function unhighlightMarkers(){//unhilight all markers
 }
 
 //event when marker was clicked
-function onAddressClick(sofaAddress,markerNumber,place){
+function onAddressClick(sofaAddress,markerNumber,place,lang,step){
     // $(".sofa-address").hide(0);//hide all markers
     $(".description-help").css("grid-column","1");
     $(".div-to-remove").remove();
@@ -476,7 +435,7 @@ function onAddressClick(sofaAddress,markerNumber,place){
     markerInfo.className="marker-holder";
     divWrap.appendChild(markerInfo);
     let showBtn = document.createElement("button");
-    showBtn.innerText = showRouteBtnText[nowLanguage];
+    showBtn.innerText = showRouteBtnText[lang];
     showBtn.className = "marker-btn";
     // console.log(`https://www.google.com/maps/dir/?api=1&origin=${myMarker.getPosition().lat()},${myMarker.getPosition().lng()}&destination=${place.latitude},${place.longitude}`);
     showBtn.onclick = function(){
@@ -484,17 +443,17 @@ function onAddressClick(sofaAddress,markerNumber,place){
     }
     markerInfo.appendChild(showBtn);
     let urlBtn = document.createElement("button");
-    urlBtn.innerText = goToTheSiteBtnText[nowLanguage];
+    urlBtn.innerText = goToTheSiteBtnText[lang];
     urlBtn.className = "marker-btn";
     urlBtn.onclick = function(){
         window.open("http://"+place.url,"_blank");
     }
     markerInfo.appendChild(urlBtn);
     let closeBtn = document.createElement("button");
-    closeBtn.innerText = closeBtnText[nowLanguage];
+    closeBtn.innerText = closeBtnText[lang];
     closeBtn.className = "marker-btn";
     closeBtn.onclick = function(){
-        closeCurrentMarker();
+        closeCurrentMarker(step);
         $(".description-help").css("grid-column","1/3");
     }
     markerInfo.appendChild(closeBtn);
@@ -509,7 +468,7 @@ function onAddressClick(sofaAddress,markerNumber,place){
     markerInfo.appendChild(nameH5);
 
     let phoneH6 = document.createElement("h6");//put the name of the marker
-    phoneH6.innerText = phonesText[nowLanguage]+ ":";
+    phoneH6.innerText = phonesText[lang]+ ":";
     divWrap.appendChild(phoneH6);
 
     for(var j=0; j<place.phones.length; j++){//put the phone numbers of current marker
@@ -523,7 +482,7 @@ function onAddressClick(sofaAddress,markerNumber,place){
     }
 
     let scheduleH6 = document.createElement("h6");//put the name of the marker
-    scheduleH6.innerText = scheduleText[nowLanguage]+ ":";
+    scheduleH6.innerText = scheduleText[lang]+ ":";
     divWrap.appendChild(scheduleH6);
 
     for(var k=0; k<7;k++){//put the schedule of current marker
@@ -535,21 +494,21 @@ function onAddressClick(sofaAddress,markerNumber,place){
         let strDay = place.schedule[k];
         let nameWeek = document.createElement("p");
         nameWeek.className = "make-flex";
-        nameWeek.innerText = weekDay[nowLanguage][k];
+        nameWeek.innerText = weekDay[lang][k];
         scheduleP.innerText = strDay;
         markerInfo.appendChild(nameWeek);
         markerInfo.appendChild(scheduleP);
     }
 }
 
-function closeCurrentMarker(){//close the clicked marker
-    unhighlightMarkers();
+function closeCurrentMarker(step){//close the clicked marker
+    unhighlightMarkers(step);
     $(".div-to-remove").remove();//remove all previous data about the marker
     $(".sofa-address").show(0);//show all markers
 }
 
 //fill the list of markers
-function fillSofaAddresses(places){
+function fillSofaAddresses(places,lang,step){
     let descriptionHelp = $(".description-help");//get the container of markers
     descriptionHelp.empty();//empty it from previous markers
     if(places.length>0){//if there are any places
@@ -557,7 +516,7 @@ function fillSofaAddresses(places){
             let sofaAddress = document.createElement("div");//create the div which contains some information about the marker
             sofaAddress.className = "sofa-address pointable marker"+i;//set the class name for it to set styles from css
             descriptionHelp.append(sofaAddress);//appendChild it to element where it should be contained
-            sofaAddress.onclick = ()=> onAddressClick(sofaAddress,i,places[i]);// set the click event. when it clicked the more information appears
+            sofaAddress.onclick = ()=> onAddressClick(sofaAddress,i,places[i],lang,step);// set the click event. when it clicked the more information appears
 
             let placeImg = document.createElement("img");
             placeImg.src=`http://www.google.com/s2/favicons?domain=${places[i].url}`;
@@ -638,7 +597,7 @@ function fillMapWithPlaces(map,lang,step,lat,lon,min,max,inc){
 
                 }
                 map.fitBounds(bounds);
-                fillSofaAddresses(placesArr);//fill the div with information about markers
+                fillSofaAddresses(placesArr,lang,step);//fill the div with information about markers
             }
             else{
                 let infoOfMarker = $(".info-of-marker");
@@ -655,7 +614,10 @@ function fillMapWithPlaces(map,lang,step,lat,lon,min,max,inc){
 function initMap(){//initialize the google map
     bounds = new google.maps.LatLngBounds();
     geocoder = new google.maps.Geocoder;//get the geocoder to decode placeIds in further
-    navigator.geolocation.getCurrentPosition(successMap, errorMap, options);//get location
+    navigator.geolocation.getCurrentPosition(
+        function(pos){return successMap(pos,"en",0)},
+        function(err){return errorMap(err,"en",0)}, 
+        options);//get location
 }
 
 class LoadingWindow extends React.Component{
@@ -952,18 +914,24 @@ class SofaContent extends React.Component{
         }
     }
 
+    componentWillReceiveProps(newProps){
+        this.setState({currentStep: newProps.currentStep});
+        setColorHeaderInfo(newProps.currentStep)
+    }
+
     clickOnStep = (steps,cS) => {
         $(".description-help").css("grid-column","1/3");
         $(".div-to-remove").remove();
         this.setState({currentStep: cS});
         console.log(steps)
-
+        setLocationList(this.props.nowLanguage,cS);
         setColorHeaderInfo(cS);//set color for header of info according to chosen step
         setInfo(steps,cS);//set the info according to the step
-        fillMapWithPlaces(map,nowLanguage,cS,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
+        fillMapWithPlaces(map,this.props.nowLanguage,cS,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
     }
 
     render(){
+        console.log("SofaContent : "+this.state.currentStep)
         return <div class="sofa-row main-section">
                     <div class="sofa-content">
                         <div class="empty_column"></div>
@@ -1051,7 +1019,6 @@ class SideMenu extends React.Component{
     }
 
     render(){
-        // console.log(this.props.setLanguage)
         return <section class="real-side-menu">
                     <Languages setLanguage={this.props.setLanguage}/>
                     <TextSize resizeText={this.props.resizeText}/>
@@ -1107,7 +1074,8 @@ class App extends React.Component{
             this.state = {
                 textSize: 1,
                 steps: this.props.steps,
-                currentStep: 0
+                currentStep: 0,
+                nowLanguage: "en"
             }
         }
 
@@ -1116,7 +1084,7 @@ class App extends React.Component{
             setTitleText(lang);//set new title according to language you chose
             highlightLanguage(lang);//highlight the chosen language
             fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-            setLocationList();
+            setLocationList(lang,this.state.currentStep);
             if(map)
             hideLoading();
         }
@@ -1129,7 +1097,6 @@ class App extends React.Component{
             xhr.open("GET", urlCurr, true);
             xhr.onload = function(e){
                 let data = JSON.parse(xhr.response);
-                console.log(JSON.parse(xhr.response))
                 lang=="he"?setRightTextAlign():setLeftTextAlign();
                 let steps = data.steps;//get info about steps
                 console.log(steps)
@@ -1139,7 +1106,7 @@ class App extends React.Component{
                 setTitleText(lang);//set new title according to language you chose
                 highlightLanguage(lang);//highlight the chosen language
                 fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-                
+                setLocationList(lang,this.state.currentStep);
                 if(map)
                 hideLoading();
             }.bind(this);
@@ -1159,10 +1126,17 @@ class App extends React.Component{
             this.setState({textSize: this.state.textSize+inc});
         }
 
+        setContentCurrentStep = () =>{
+
+        }
+
         setLanguage = (lang) =>{
-                nowLanguage = lang;//set the nowLanguage global variable
-                this.getAndSetDataByLang(nowLanguage);//set the data according to langugage you chose
-                setLocationList();
+                this.setState({
+                    nowLanguage: lang,
+                    currentStep: 0
+                });
+                this.getAndSetDataByLang(lang);//set the data according to langugage you chose
+                setLocationList(lang,this.state.currentStep+1);
         };
     
         render(){
@@ -1174,6 +1148,7 @@ class App extends React.Component{
                             setLanguage={this.setLanguage}
                         />
                         <SofaContent 
+                            nowLanguage={this.state.nowLanguage}
                             textSize={this.state.textSize}
                             steps={this.state.steps}
                             stepDesc={this.state.stepDesc}
