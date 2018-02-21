@@ -1,7 +1,3 @@
-
-
-
-
 // $().ready(main);
 
 let zoomValue = 1;
@@ -891,44 +887,16 @@ class SofaHorizScrollMenuBody extends React.Component{
 
     updateStepNames = (newStepNames) =>{this.setState({stepNames: newStepNames})};
 
+    eachStepName = (stepName,i) =>{
+        return <a href="#" id={`item${i+1}`} class=" menu-item">
+                    <img class="step-image" src={`images/step_0${i+1}.png`}/>
+                    <p class="choose-step">{stepName}</p>
+                </a>
+    }
+
     render(){
         return <section class="sofa-horiz">
-                <a href="#" id="item1" class=" menu-item">
-                    <img class="step-image" src="images/step_01.png"/>
-                    <p class="choose-step">{this.state.stepNames[0]}</p>
-                </a>
-                <a href="#" id="item2" class=" menu-item">
-                        <img class="step-image" src="images/step_02.png"/>
-                        <p class="choose-step">{this.state.stepNames[1]}</p>
-                    </a>
-                <a href="#" id="item3" class=" menu-item">
-                        <img class="step-image" src="images/step_03.png"/>
-                        <p class="choose-step">{this.state.stepNames[2]}</p>
-                </a>
-                <a href="#" id="item4" class=" menu-item">
-                        <img class="step-image" src="images/step_04.png"/>
-                        <p class="choose-step">{this.state.stepNames[3]}</p>
-                </a>
-                <a href="#" id="item5" class=" menu-item">
-                        <img class="step-image" src="images/step_05.png"/>
-                        <p class="choose-step">{this.state.stepNames[4]}</p>
-                </a>
-                <a href="#" id="item6" class=" menu-item">
-                        <img class="step-image" src="images/step_06.png"/>
-                        <p class="choose-step">{this.state.stepNames[5]}</p>
-                </a>
-                <a href="#" id="item7" class=" menu-item">
-                        <img class="step-image" src="images/step_07.png"/>
-                        <p class="choose-step">{this.state.stepNames[6]}</p>
-                </a>
-                <a href="#" id="item8" class=" menu-item">
-                        <img class="step-image" src="images/step_08.png"/>
-                        <p class="choose-step">{this.state.stepNames[7]}</p>
-                </a>
-                <a href="#" id="item9" class=" menu-item">
-                        <img class="step-image" src="images/step_09.png"/>
-                        <p class="choose-step">{this.state.stepNames[8]}</p>
-                </a>
+                {this.state.stepNames.map(this.eachStepName)}
                 <a id="item-filler"></a>
             </section>
     }
@@ -955,7 +923,9 @@ class SofaStepHeader extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            stepHeadName: "Teudat Zehut"
+            stepHeadName: "Teudat Zehut",
+            infoBtnText: ["INFO","MARKERS"],
+            nowInfoIndex: 0
         };
         this.onInfoBtnClick = this.onInfoBtnClick.bind(this);
         // this.updateStepHeadName = this.updateStepHeadName.bind(this);
@@ -965,19 +935,21 @@ class SofaStepHeader extends React.Component{
     //TODO set clicks
 
     updateStepHeadName = (newStepHeadName) =>{this.setState({stepHeadName: newStepHeadName})};
+    updateInfoBtnText = () =>{this.setState({nowInfoIndex: (++this.state.nowInfoIndex)%2})};
 
     onInfoBtnClick(){
         // console.log("click");
         showTheInfo = !showTheInfo;
         toggleShowInfo(showTheInfo);
-        this.updateStepHeadName("MARKERS");
+        this.updateInfoBtnText();
+        // console.log(this.state.stepHeadName);
     }
 
     render(){
         return <div class="step-header">
                     <img class="step-img"/>
                     <p class="step-head">{this.state.stepHeadName.toUpperCase()}</p>
-                    <p onClick={this.onInfoBtnClick} class="info-head pointable">INFO</p>
+                    <p onClick={this.onInfoBtnClick} class="info-head pointable">{this.state.infoBtnText[this.state.nowInfoIndex]}</p>
                 </div>
     }
 }
