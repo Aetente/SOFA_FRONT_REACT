@@ -108,7 +108,6 @@ let showTheInfo = false;
 
 //TODO rewrite everything from main to react
 function main(){//intialise everything
-    // setClicksPlusMinusText();
     $('.scroll-back').click(function () {
         $('.sofa-horiz').animate({
             scrollLeft: '-=271'
@@ -163,36 +162,11 @@ function setGoToMinesterySiteBtn(){
 
 function setInfoHeight(){
     if(window.innerWidth>767){
-        $(".step-description").css(
-            "grid-template-rows",
-            (window.innerHeight-document.getElementsByClassName("step-description")[0].getBoundingClientRect().y-10)+"px");
-            $(".sofa-map").css(
-                "height",
-                (window.innerHeight-document.getElementsByClassName("sofa-map")[0].getBoundingClientRect().y-10)+"px");
+        document.getElementsByClassName("step-description")[0].style.gridTemplateColums = 
+        (window.innerHeight-document.getElementsByClassName("step-description")[0].getBoundingClientRect().y-10)+"px";
+        document.getElementsByClassName("sofa-map")[0].style.height = 
+        (window.innerHeight-document.getElementsByClassName("sofa-map")[0].getBoundingClientRect().y-10)+"px";
     }
-}
-
-function setClicksPlusMinusText(){
-    $("#plus-text").click(
-        function(){
-            zoomInText();
-        }
-    );
-    $("#minus-text").click(
-        function(){
-            zoomOutText();
-        }
-    );
-}
-
-function zoomInText(){
-    zoomValue+=0.1;
-    $(".info-of-step").css("font-size",zoomValue+"em");
-}
-
-function zoomOutText(){
-    zoomValue-=0.1;
-    $(".info-of-step").css("font-size",zoomValue+"em");
 }
 
 function showLoading(){
@@ -213,24 +187,6 @@ function setLeftTextAlign(){
     $(".info-of-step").css("text-align","left");
     // $(".menu-item p").css("text-align","left");
 }
-
-
-
-//set clicks for change language buttons
-function setLanguage(){
-    let qOfLang = $(".changeLang").length;//get the quantity of languages
-    for(var i=0; i<qOfLang; i++){
-        $(".changeLang")[i].onclick =
-            function(){
-                nowLanguage = this.getAttribute("id");//set the nowLanguage global variable
-                setDataByLang(nowLanguage);//set the data according to langugage you chose
-                setLocationList();
-            };
-    }
-}
-
-
-
 
 //set clicks in this menu according to the info you got
 function setButtonClicks(steps){
@@ -257,6 +213,7 @@ function setColorHeaderInfo(currentStep){
 
 //set the info according to step
 function setInfo(steps,numbStep){
+    console.log(steps[numbStep].title)
     $(".step-head").text(steps[numbStep].title);
     $(".description-text").text(steps[numbStep].description);
     $(".step-need").text(steps[numbStep].need);
@@ -307,6 +264,15 @@ function changePosition(lat,lon){
     fillMapWithPlaces(map,nowLanguage,currentStep,lat,lon,MIN_KM,MAX_KM,INC);
 }
 
+//if succesided to get geolocation
+function successMap(pos){
+    currentCity = "0";
+    lat = pos.coords.latitude;
+    lon = pos.coords.longitude;
+    setMap(lat,lon);
+    
+}
+
 function setMap(lat,lon){
     map = null;
     var icon = {
@@ -330,15 +296,6 @@ function setMap(lat,lon){
         zIndex: 2
     });//put marker
     fillMapWithPlaces(map,nowLanguage,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-}
-
-//if succesided to get geolocation
-function successMap(pos){
-    currentCity = "0";
-    lat = pos.coords.latitude;
-    lon = pos.coords.longitude;
-    setMap(lat,lon);
-    
 }
 
 function onCityListChange(){
@@ -602,17 +559,6 @@ function fillSofaAddresses(places){
             descriptionHelp.append(sofaAddress);//appendChild it to element where it should be contained
             sofaAddress.onclick = ()=> onAddressClick(sofaAddress,i,places[i]);// set the click event. when it clicked the more information appears
 
-            //the logic of adding following elements is pretty much the same
-
-            // let imAddress = document.createElement("img");//add the container for image
-            // //it wont probably be needed
-            // imAddress.className = "im-address";
-            // sofaAddress.appendChild(imAddress);
-
-            // let addressInfo = document.createElement("div");//add the 
-            // addressInfo.className = "address-info";
-            // sofaAddress.appendChild(addressInfo);
-
             let placeImg = document.createElement("img");
             placeImg.src=`http://www.google.com/s2/favicons?domain=${places[i].url}`;
             placeImg.height = 24;
@@ -644,8 +590,6 @@ function fillSofaAddresses(places){
 
 function geocodeFunc(res,status,placeId,addressP,sofaAddress){
     if(status=="OK"){
-        // console.log(res[0]);
-        // addressString = res[0].formatted_address;
         let aC = res[0].address_components;
         let addressString = `${aC[2].long_name}, ${aC[1].short_name}, ${aC[0].short_name}`;
         addressP.innerText = addressString;
@@ -653,10 +597,6 @@ function geocodeFunc(res,status,placeId,addressP,sofaAddress){
     }
     else{//TODO what should happen when you dont get the address(it happens a lot more frequently than expected)
         console.log(status);
-        // geocoder.geocode({"placeId":placeId},//decode the placeId to get address
-        // function(res, status){
-        //     geocodeFunc(res,status,placeId,addressP,sofaAddress);
-        // });
         addressP.innerText = addressString;
         sofaAddress.appendChild(addressP);
     }
@@ -665,7 +605,6 @@ function geocodeFunc(res,status,placeId,addressP,sofaAddress){
 //fill the map with markers
 function fillMapWithPlaces(map,lang,step,lat,lon,min,max,inc){
     if(map!=null){//if the map was initialized
-        // let urlCurr = theUrl+`step/${lang}/${step+1}/area/${lat}/${lon}/${rad}`;//url request
         let urlCurr = theUrl+`step/${lang}/${step+1}/area/${lat}/${lon}/${min}/${max}/${inc}`;//url request
         // console.log(myMarker.getPosition());
         bounds = new google.maps.LatLngBounds();
@@ -828,54 +767,6 @@ class TextSize extends React.Component{
     }
 }
 
-class SofaHorizScrollMenuBody extends React.Component{
-    
-    constructor(props){
-        super(props);
-        this.state = {
-            stepNames: this.props.stepNames
-        }
-    }
-
-    //TODO update step names
-    //TODO set clicks
-
-    updateStepNames = (newStepNames) =>{this.setState({stepNames: newStepNames})};
-
-    eachStepName = (stepName,i) =>{
-        // onClick={()=>{this.props.clickOnStep(this.state.stepNames,i+1)}}
-        return <a href="#" id={`item${i+1}`} class=" menu-item" >
-                    <img class="step-image" src={`images/step_0${i+1}.png`}/>
-                    <p class="choose-step">{stepName}</p>
-                </a>
-    }
-
-    render(){
-        console.log("drawing horiz scroll");
-        // console.log(this.state.stepNames)
-        return <section class="sofa-horiz">
-                {this.state.stepNames.map(this.eachStepName)}
-                <a id="item-filler"></a>
-            </section>
-    }
-}
-
-class HorizScrollButtonHolder extends React.Component{
-    
-    constructor(props){
-        super(props);
-    }
-
-    //TODO set clicks
-
-    render(){
-        return <section class="scrollbutton-holder">
-                    <a class="scroll-back pointable"><h1>{"<"}</h1></a>
-                    <a class="scroll-forward pointable"><h1>{">"}</h1></a>
-                </section>
-    }
-}
-
 class SofaStepHeader extends React.Component{
     
     constructor(props){
@@ -953,15 +844,6 @@ class HelpDescription extends React.Component{
     toggleShowMarker =()=>{this.setState({toShow:!this.state.toShow})}
 
     render(){
-        // this.toggleShowMarker();
-        // if(this.state.toShow){
-        //     return <div class="description-help">
-        
-        //         </div>
-        // }
-        // else{
-        //     return "";
-        // }
         return <div class="description-help">
         
                 </div>
@@ -991,7 +873,9 @@ class DescriptionOfStep extends React.Component{
     render(){
         if(this.props.toShow){
             return <div class="step-description">
-                        <InfoOfStep textSize={this.props.textSize}/>
+                        <InfoOfStep 
+                            textSize={this.props.textSize}
+                            steps={this.props.step}/>
                     </div>
         }
         else{
@@ -1018,10 +902,13 @@ class SofaStep extends React.Component{
     };
 
     render(){
-        console.log(this.state.toShow)
         return <section class="sofa-step">
-                    <SofaStepHeader showInfoCallback={this.showInfoCallback}/>
-                    <DescriptionOfStep toShow={this.state.toShow} textSize={this.props.textSize}/>
+                    <SofaStepHeader 
+                        showInfoCallback={this.showInfoCallback}
+                        steps={this.props.step}/>
+                    <DescriptionOfStep 
+                        toShow={this.state.toShow} textSize={this.props.textSize}
+                        steps={this.props.step}/>
                 </section>
     }
 }
@@ -1047,7 +934,9 @@ class SofaHoldInfo extends React.Component{
     render(){
         return <section class="hold-info main-section">
                     <div class="the-info">
-                        <SofaStep textSize={this.props.textSize}/>
+                        <SofaStep 
+                            textSize={this.props.textSize}
+                            steps={this.props.steps}/>
                         <SofaMap/>
                     </div>
                 </section>
@@ -1059,15 +948,18 @@ class SofaContent extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            currentStep: 0
+            currentStep: 0,
+            stepColor: "#00508c",
+            stepClicked: false
         }
     }
 
     clickOnStep = (steps,cS) => {
         $(".description-help").css("grid-column","1/3");
         $(".div-to-remove").remove();
-        this.setState({currentStep: cS-1});
-        console.log(this.state.currentStep)
+        this.setState({currentStep: cS});
+        console.log(steps)
+
         setColorHeaderInfo(cS);//set color for header of info according to chosen step
         setInfo(steps,cS);//set the info according to the step
         fillMapWithPlaces(map,nowLanguage,cS,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
@@ -1078,9 +970,11 @@ class SofaContent extends React.Component{
                     <div class="sofa-content">
                         <div class="empty_column"></div>
                         <SofaHorizScrollMenu 
-                            stepNames={this.props.stepNames}
+                            steps={this.props.steps}
                             clickOnStep={this.clickOnStep}/>
-                        <SofaHoldInfo textSize={this.props.textSize}/>
+                        <SofaHoldInfo 
+                            textSize={this.props.textSize}
+                            steps={this.props.steps}/>
                     </div>
                 </div>
     }
@@ -1097,10 +991,56 @@ class SofaHorizScrollMenu extends React.Component{
     render(){
         return <section class="scroll-horiz main-section">
                     <SofaHorizScrollMenuBody 
-                        stepNames={this.props.stepNames}
+                        steps={this.props.steps}
                         clickOnStep={this.props.clickOnStep}/>
                     <HorizScrollButtonHolder
                     />
+                </section>
+    }
+}
+
+class SofaHorizScrollMenuBody extends React.Component{
+    
+    constructor(props){
+        super(props);
+        this.state = {
+            steps: this.props.steps
+        }
+    }
+
+    //TODO update step names
+    //TODO set clicks
+
+    eachStepName = (step,i) =>{
+        // onClick={()=>{this.props.clickOnStep(this.state.stepNames,i+1)}}
+        return <a href="#" id={`item${i+1}`} class=" menu-item" onClick={()=>{this.props.clickOnStep(this.state.steps,i)}}>
+                    <img class="step-image" src={`images/step_0${i+1}.png`}/>
+                    <p class="choose-step">{step.title}</p>
+                </a>
+    }
+
+    render(){
+        console.log("drawing horiz scroll");
+        console.log(this.props.steps)
+        return <section class="sofa-horiz">
+                {this.state.steps.map(this.eachStepName)}
+                <a id="item-filler"></a>
+            </section>
+    }
+}
+
+class HorizScrollButtonHolder extends React.Component{
+    
+    constructor(props){
+        super(props);
+    }
+
+    //TODO set clicks
+
+    render(){
+        return <section class="scrollbutton-holder">
+                    <a class="scroll-back pointable"><h1>{"<"}</h1></a>
+                    <a class="scroll-forward pointable"><h1>{">"}</h1></a>
                 </section>
     }
 }
@@ -1167,33 +1107,22 @@ class App extends React.Component{
             super(props);
             this.state = {
                 textSize: 1,
-                stepNames: [
-                    "Teudat Zehut",
-                    "Opening a bank account",
-                    "Registration in a Health Fund",
-                    "Аbsorption basket and  Hebrew ulpan",
-                    "Kindergarten / school",
-                    "Housing",
-                    "Apply for the arnona discount",
-                    "Confirm the education",
-                    "Converting a Driver's License"
-                ],
-                stepDesc: [
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    ""
-                ],
+                steps: this.props.steps,
                 currentStep: 0
             }
         }
 
         setDataByLang = (lang)=>{
+            showLoading();
+            setInfo(this.state.steps,currentStep);//set the info about the step
+            setTitleText(lang);//set new title according to language you chose
+            highlightLanguage(lang);//highlight the chosen language
+            fillMapWithPlaces(map,lang,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+            if(map)
+            hideLoading();
+        }
+
+        getAndSetDataByLang = (lang)=>{
             showLoading();
             $(".div-to-remove").remove();
             let urlCurr = theUrl+lang;//url to get info by language
@@ -1204,15 +1133,16 @@ class App extends React.Component{
                 console.log(JSON.parse(xhr.response))
                 lang=="he"?setRightTextAlign():setLeftTextAlign();
                 let steps = data.steps;//get info about steps
+                console.log(steps)
                 steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
-                this.setState({stepNames:steps});
-                console.log(this.state.stepNames);
-                // setSelectSteps(this.state.stepNames);//set text for menu where you choose step
-                setButtonClicks(steps)//set clicks in this menu according to the info you got
-                setInfo(this.state.stepNames,currentStep);//set the info about the step
+                this.setState({steps:steps});
+                console.log(this.state.steps);
+                // setButtonClicks(steps)//set clicks in this menu according to the info you got
+                setInfo(this.state.steps,currentStep);//set the info about the step
                 setTitleText(lang);//set new title according to language you chose
                 highlightLanguage(lang);//highlight the chosen language
                 fillMapWithPlaces(map,lang,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+                
                 if(map)
                 hideLoading();
             }.bind(this);
@@ -1234,7 +1164,7 @@ class App extends React.Component{
 
         setLanguage = (lang) =>{
                 nowLanguage = lang;//set the nowLanguage global variable
-                this.setDataByLang(nowLanguage);//set the data according to langugage you chose
+                this.getAndSetDataByLang(nowLanguage);//set the data according to langugage you chose
                 setLocationList();
             };
     
@@ -1248,7 +1178,7 @@ class App extends React.Component{
                         />
                         <SofaContent 
                             textSize={this.state.textSize}
-                            stepNames={this.state.stepNames}
+                            steps={this.state.steps}
                             stepDesc={this.state.stepDesc}
                             currentStep={this.state.currentStep}
                         />
@@ -1256,7 +1186,23 @@ class App extends React.Component{
         }
     }
 
-    ReactDOM.render(
-        <App/>,
-        document.getElementById('root')
-    );
+main=()=>{
+    let urlCurr = theUrl+"en";//url to get info by language
+    let xhr = new XMLHttpRequest()
+    xhr.open("GET", urlCurr, true);
+    xhr.onload = function(e){
+        let data = JSON.parse(xhr.response);
+        let steps = data.steps;//get info about steps
+        console.log(steps)
+        ReactDOM.render(
+            <App steps={steps}/>,
+            document.getElementById('root')
+        );
+    }
+    xhr.onerror = function(e){
+        console.log(e)
+    }
+    xhr.send();
+}
+
+main();
