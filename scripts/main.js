@@ -119,15 +119,10 @@ function main(){//intialise everything
             scrollLeft: '+=271'
         }, 500, 'linear');
     });//scroll steps forward
-    toggleShowInfo(showTheInfo);
     setInfoHeight();
-    setDataByLang(nowLanguage);//set all info
-    // setLanguage();//set change language buttons clicks in right menu
+    // setDataByLang(nowLanguage);//set all info
     highlightLanguage(nowLanguage);//highlight choosen language
-    // prepareLocationList();
     setLocationList();
-    // setGoToMinesterySiteBtn();
-    // setInfoBtnClick()
 }
 
 function onInfoBtnClick(){
@@ -219,27 +214,7 @@ function setLeftTextAlign(){
     // $(".menu-item p").css("text-align","left");
 }
 
-//set all info
-function setDataByLang(lang){
-    showLoading();
-    $(".div-to-remove").remove();
-    let urlCurr = theUrl+lang;//url to get info by language
-    $.ajax({
-        url: urlCurr
-    }).then(function (data) {
-        lang=="he"?setRightTextAlign():setLeftTextAlign();
-        let steps = data.steps;//get info about steps
-        steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
-        setSelectSteps(steps);//set text for menu where you choose step
-        setButtonClicks(steps)//set clicks in this menu according to the info you got
-        setInfo(steps,currentStep);//set the info about the step
-        setTitleText(lang);//set new title according to language you chose
-        highlightLanguage(lang);//highlight the chosen language
-        fillMapWithPlaces(map,lang,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-        if(map)
-        hideLoading();
-    });
-}
+
 
 //set clicks for change language buttons
 function setLanguage(){
@@ -923,7 +898,8 @@ class SofaStepHeader extends React.Component{
     onInfoBtnClick(){
         // console.log("click");
         showTheInfo = !showTheInfo;
-        toggleShowInfo(showTheInfo);
+        // toggleShowInfo(showTheInfo);
+        this.props.showInfoCallback();
         this.updateInfoBtnText();
         // console.log(this.state.stepHeadName);
     }
@@ -943,7 +919,8 @@ class InfoOfStep extends React.Component{
         super(props);
         this.state = {
             descriptionText: "",
-            stepNeedText: ""
+            stepNeedText: "",
+            toShow: this.props.toShow
         }
     }
 
@@ -952,8 +929,11 @@ class InfoOfStep extends React.Component{
     updateDescriptionText = (newDescriptionText) =>{this.setState({descriptionText: newDescriptionText})};
     updateStepNeedText = (newStepNeedText) => {this.setState({stepNeedText: newStepNeedText})};
 
+    toggleShowInfo = ()=>{
+        this.setState({toShow:!this.state.toShow});
+    }
+
     render(){
-        console.log("drawing info of step")
         return <div class="info-of-step"  style={{"font-size":this.props.textSize+"em"}}>
                     <div class="description-text">{this.state.descriptionText}</div>
                     <div class="step-need">{this.state.stepNeedText}</div>
@@ -965,9 +945,23 @@ class HelpDescription extends React.Component{
     
     constructor(props){
         super(props);
+        this.state={
+            toShow: this.props.toShow
+        }
     }
 
+    toggleShowMarker =()=>{this.setState({toShow:!this.state.toShow})}
+
     render(){
+        // this.toggleShowMarker();
+        // if(this.state.toShow){
+        //     return <div class="description-help">
+        
+        //         </div>
+        // }
+        // else{
+        //     return "";
+        // }
         return <div class="description-help">
         
                 </div>
@@ -989,14 +983,23 @@ class DescriptionOfStep extends React.Component{
     
     constructor(props){
         super(props);
+        this.state= {
+            toShow: this.props.toShow
+        }
     }
 
     render(){
-        return <div class="step-description">
-                    <InfoOfStep textSize={this.props.textSize}/>
-                    <HelpDescription/>
-                    <InfoAboutMarker/>
-                </div>
+        if(this.props.toShow){
+            return <div class="step-description">
+                        <InfoOfStep textSize={this.props.textSize}/>
+                    </div>
+        }
+        else{
+            return <div class="step-description">
+                        <HelpDescription/>
+                        <InfoAboutMarker/>
+                    </div>
+        }
     }
 }
 
@@ -1004,12 +1007,21 @@ class SofaStep extends React.Component{
     
     constructor(props){
         super(props);
+        this.state={
+            toShow: false
+        };
     }
 
+    showInfoCallback = () =>{
+        this.setState({toShow: !this.state.toShow});
+        
+    };
+
     render(){
+        console.log(this.state.toShow)
         return <section class="sofa-step">
-                    <SofaStepHeader/>
-                    <DescriptionOfStep textSize={this.props.textSize}/>
+                    <SofaStepHeader showInfoCallback={this.showInfoCallback}/>
+                    <DescriptionOfStep toShow={this.state.toShow} textSize={this.props.textSize}/>
                 </section>
     }
 }
@@ -1165,7 +1177,19 @@ class App extends React.Component{
                     "Apply for the arnona discount",
                     "Confirm the education",
                     "Converting a Driver's License"
-                ]
+                ],
+                stepDesc: [
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    ""
+                ],
+                currentStep: 0
             }
         }
 
@@ -1173,14 +1197,17 @@ class App extends React.Component{
             showLoading();
             $(".div-to-remove").remove();
             let urlCurr = theUrl+lang;//url to get info by language
-            $.ajax({
-                url: urlCurr
-            }).then(function (data) {
+            let xhr = new XMLHttpRequest()
+            xhr.open("GET", urlCurr, true);
+            xhr.onload = function(e){
+                let data = JSON.parse(xhr.response);
+                console.log(JSON.parse(xhr.response))
                 lang=="he"?setRightTextAlign():setLeftTextAlign();
                 let steps = data.steps;//get info about steps
                 steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
                 this.setState({stepNames:steps});
-                setSelectSteps(this.state.stepNames);//set text for menu where you choose step
+                console.log(this.state.stepNames);
+                // setSelectSteps(this.state.stepNames);//set text for menu where you choose step
                 setButtonClicks(steps)//set clicks in this menu according to the info you got
                 setInfo(this.state.stepNames,currentStep);//set the info about the step
                 setTitleText(lang);//set new title according to language you chose
@@ -1188,13 +1215,17 @@ class App extends React.Component{
                 fillMapWithPlaces(map,lang,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
                 if(map)
                 hideLoading();
-            });
+            }.bind(this);
+            xhr.onerror = function(e){
+                console.log(e)
+            }
+            xhr.send();
         }
     
         componentDidMount() {
             loadJS("https://maps.googleapis.com/maps/api/js?key=AIzaSyB6thMLQSj4zVrofw-UAUkXu_5_D3ucCEI&callback=initMap");
-            this.setDataByLang();
             main();
+            this.setDataByLang("en");
         }
 
         textSizeCallback = (inc) =>{
@@ -1218,7 +1249,8 @@ class App extends React.Component{
                         <SofaContent 
                             textSize={this.state.textSize}
                             stepNames={this.state.stepNames}
-                            
+                            stepDesc={this.state.stepDesc}
+                            currentStep={this.state.currentStep}
                         />
                     </div>
         }
