@@ -105,6 +105,8 @@ let cityList = [];//the list of cities which will appear when geolocation is loc
 let currentCity;
 let showTheInfo = false;
 
+
+//TODO rewrite everything from main to react
 function main(){//intialise everything
     // setClicksPlusMinusText();
     $('.scroll-back').click(function () {
@@ -117,14 +119,6 @@ function main(){//intialise everything
             scrollLeft: '+=271'
         }, 500, 'linear');
     });//scroll steps forward
-    $('.sofa-search').keypress(
-        (e)=>{
-            if(e.which==13&&$('.sofa-search').val()){
-                // console.log("https://www.google.com/search?q="+$('.sofa-search').val());
-                window.location.href = "https://www.google.com/search?q="+$('.sofa-search').val();//google search
-            }
-        }//search which is located above in right corner
-    )
     toggleShowInfo(showTheInfo);
     setInfoHeight();
     setDataByLang(nowLanguage);//set all info
@@ -614,9 +608,6 @@ function onAddressClick(sofaAddress,markerNumber,place){
         markerInfo.appendChild(nameWeek);
         markerInfo.appendChild(scheduleP);
     }
-
-    
-
 }
 
 function closeCurrentMarker(){//close the clicked marker
@@ -877,7 +868,8 @@ class SofaHorizScrollMenuBody extends React.Component{
     updateStepNames = (newStepNames) =>{this.setState({stepNames: newStepNames})};
 
     eachStepName = (stepName,i) =>{
-        return <a href="#" id={`item${i+1}`} class=" menu-item">
+        // onClick={()=>{this.props.clickOnStep(this.state.stepNames,i+1)}}
+        return <a href="#" id={`item${i+1}`} class=" menu-item" >
                     <img class="step-image" src={`images/step_0${i+1}.png`}/>
                     <p class="choose-step">{stepName}</p>
                 </a>
@@ -1054,13 +1046,28 @@ class SofaContent extends React.Component{
     
     constructor(props){
         super(props);
+        this.state = {
+            currentStep: 0
+        }
+    }
+
+    clickOnStep = (steps,cS) => {
+        $(".description-help").css("grid-column","1/3");
+        $(".div-to-remove").remove();
+        this.setState({currentStep: cS-1});
+        console.log(this.state.currentStep)
+        setColorHeaderInfo(cS);//set color for header of info according to chosen step
+        setInfo(steps,cS);//set the info according to the step
+        fillMapWithPlaces(map,nowLanguage,cS,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
     }
 
     render(){
         return <div class="sofa-row main-section">
                     <div class="sofa-content">
                         <div class="empty_column"></div>
-                        <SofaHorizScrollMenu stepNames={this.props.stepNames}/>
+                        <SofaHorizScrollMenu 
+                            stepNames={this.props.stepNames}
+                            clickOnStep={this.clickOnStep}/>
                         <SofaHoldInfo textSize={this.props.textSize}/>
                     </div>
                 </div>
@@ -1073,10 +1080,15 @@ class SofaHorizScrollMenu extends React.Component{
         super(props);
     }
 
+    
+
     render(){
         return <section class="scroll-horiz main-section">
-                    <SofaHorizScrollMenuBody stepNames={this.props.stepNames}/>
-                    <HorizScrollButtonHolder/>
+                    <SofaHorizScrollMenuBody 
+                        stepNames={this.props.stepNames}
+                        clickOnStep={this.props.clickOnStep}/>
+                    <HorizScrollButtonHolder
+                    />
                 </section>
     }
 }
@@ -1156,9 +1168,32 @@ class App extends React.Component{
                 ]
             }
         }
+
+        setDataByLang = (lang)=>{
+            showLoading();
+            $(".div-to-remove").remove();
+            let urlCurr = theUrl+lang;//url to get info by language
+            $.ajax({
+                url: urlCurr
+            }).then(function (data) {
+                lang=="he"?setRightTextAlign():setLeftTextAlign();
+                let steps = data.steps;//get info about steps
+                steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
+                this.setState({stepNames:steps});
+                setSelectSteps(this.state.stepNames);//set text for menu where you choose step
+                setButtonClicks(steps)//set clicks in this menu according to the info you got
+                setInfo(this.state.stepNames,currentStep);//set the info about the step
+                setTitleText(lang);//set new title according to language you chose
+                highlightLanguage(lang);//highlight the chosen language
+                fillMapWithPlaces(map,lang,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+                if(map)
+                hideLoading();
+            });
+        }
     
         componentDidMount() {
             loadJS("https://maps.googleapis.com/maps/api/js?key=AIzaSyB6thMLQSj4zVrofw-UAUkXu_5_D3ucCEI&callback=initMap");
+            this.setDataByLang();
             main();
         }
 
@@ -1168,7 +1203,7 @@ class App extends React.Component{
 
         setLanguage = (lang) =>{
                 nowLanguage = lang;//set the nowLanguage global variable
-                setDataByLang(nowLanguage);//set the data according to langugage you chose
+                this.setDataByLang(nowLanguage);//set the data according to langugage you chose
                 setLocationList();
             };
     
