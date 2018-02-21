@@ -619,7 +619,7 @@ function fillMapWithPlaces(map,lang,step,lat,lon,min,max,inc){
                 
                 for(var i=0;i<placesArr.length;i++){
                     let icon = {
-                        url: icons[currentStep+1], // url
+                        url: icons[step+1], // url
                         scaledSize: new google.maps.Size(20, 30), // scaled size
                         origin: new google.maps.Point(0,0), // origin
                         anchor: new google.maps.Point(0, 0) // anchor
@@ -719,8 +719,6 @@ class CityList extends React.Component{
                                                             cityValueList: newCityValues
                                                         }
                                                     )};
-    
-    
 
     render(){
         return <div class="hold-search margin-to-zero">
@@ -772,7 +770,6 @@ class SofaStepHeader extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            stepHeadName: "Teudat Zehut",
             infoBtnText: ["INFO","MARKERS"],
             nowInfoIndex: 0
         };
@@ -782,8 +779,6 @@ class SofaStepHeader extends React.Component{
 
     //TODO update step head name
     //TODO set clicks
-
-    updateStepHeadName = (newStepHeadName) =>{this.setState({stepHeadName: newStepHeadName})};
     updateInfoBtnText = () =>{this.setState({nowInfoIndex: (++this.state.nowInfoIndex)%2})};
 
     onInfoBtnClick(){
@@ -796,9 +791,10 @@ class SofaStepHeader extends React.Component{
     }
 
     render(){
+        console.log(this.props.steps)
         return <div class="step-header">
-                    <img class="step-img"/>
-                    <p class="step-head">{this.state.stepHeadName.toUpperCase()}</p>
+                    <img class="step-img" src={"images/step_0"+(this.props.currentStep+1)+".png"}/>
+                    <p class="step-head">{this.props.steps[this.props.currentStep].title.toUpperCase()}</p>
                     <p onClick={this.onInfoBtnClick} class="info-head pointable">{this.state.infoBtnText[this.state.nowInfoIndex]}</p>
                 </div>
     }
@@ -809,8 +805,6 @@ class InfoOfStep extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            descriptionText: "",
-            stepNeedText: "",
             toShow: this.props.toShow
         }
     }
@@ -826,8 +820,8 @@ class InfoOfStep extends React.Component{
 
     render(){
         return <div class="info-of-step"  style={{"font-size":this.props.textSize+"em"}}>
-                    <div class="description-text">{this.state.descriptionText}</div>
-                    <div class="step-need">{this.state.stepNeedText}</div>
+                    <div class="description-text">{this.props.steps[this.props.currentStep].description}</div>
+                    <div class="step-need">{this.props.steps[this.props.currentStep].need}</div>
                 </div>
     }
 }
@@ -875,7 +869,8 @@ class DescriptionOfStep extends React.Component{
             return <div class="step-description">
                         <InfoOfStep 
                             textSize={this.props.textSize}
-                            steps={this.props.step}/>
+                            steps={this.props.steps}
+                            currentStep={this.props.currentStep}/>
                     </div>
         }
         else{
@@ -905,10 +900,12 @@ class SofaStep extends React.Component{
         return <section class="sofa-step">
                     <SofaStepHeader 
                         showInfoCallback={this.showInfoCallback}
-                        steps={this.props.step}/>
+                        steps={this.props.steps}
+                        currentStep={this.props.currentStep}/>
                     <DescriptionOfStep 
                         toShow={this.state.toShow} textSize={this.props.textSize}
-                        steps={this.props.step}/>
+                        steps={this.props.steps}
+                        currentStep={this.props.currentStep}/>
                 </section>
     }
 }
@@ -936,7 +933,8 @@ class SofaHoldInfo extends React.Component{
                     <div class="the-info">
                         <SofaStep 
                             textSize={this.props.textSize}
-                            steps={this.props.steps}/>
+                            steps={this.props.steps}
+                            currentStep={this.props.currentStep}/>
                         <SofaMap/>
                     </div>
                 </section>
@@ -974,7 +972,8 @@ class SofaContent extends React.Component{
                             clickOnStep={this.clickOnStep}/>
                         <SofaHoldInfo 
                             textSize={this.props.textSize}
-                            steps={this.props.steps}/>
+                            steps={this.props.steps}
+                            currentStep={this.state.currentStep}/>
                     </div>
                 </div>
     }
@@ -1013,7 +1012,7 @@ class SofaHorizScrollMenuBody extends React.Component{
 
     eachStepName = (step,i) =>{
         // onClick={()=>{this.props.clickOnStep(this.state.stepNames,i+1)}}
-        return <a href="#" id={`item${i+1}`} class=" menu-item" onClick={()=>{this.props.clickOnStep(this.state.steps,i)}}>
+        return <a href="#" id={`item${i+1}`} class=" menu-item" onClick={()=>{this.props.clickOnStep(this.props.steps,i)}}>
                     <img class="step-image" src={`images/step_0${i+1}.png`}/>
                     <p class="choose-step">{step.title}</p>
                 </a>
@@ -1023,7 +1022,7 @@ class SofaHorizScrollMenuBody extends React.Component{
         console.log("drawing horiz scroll");
         console.log(this.props.steps)
         return <section class="sofa-horiz">
-                {this.state.steps.map(this.eachStepName)}
+                {this.props.steps.map(this.eachStepName)}
                 <a id="item-filler"></a>
             </section>
     }
@@ -1114,10 +1113,10 @@ class App extends React.Component{
 
         setDataByLang = (lang)=>{
             showLoading();
-            setInfo(this.state.steps,currentStep);//set the info about the step
             setTitleText(lang);//set new title according to language you chose
             highlightLanguage(lang);//highlight the chosen language
-            fillMapWithPlaces(map,lang,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+            fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+            setLocationList();
             if(map)
             hideLoading();
         }
@@ -1137,11 +1136,9 @@ class App extends React.Component{
                 steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
                 this.setState({steps:steps});
                 console.log(this.state.steps);
-                // setButtonClicks(steps)//set clicks in this menu according to the info you got
-                setInfo(this.state.steps,currentStep);//set the info about the step
                 setTitleText(lang);//set new title according to language you chose
                 highlightLanguage(lang);//highlight the chosen language
-                fillMapWithPlaces(map,lang,currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+                fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
                 
                 if(map)
                 hideLoading();
@@ -1166,7 +1163,7 @@ class App extends React.Component{
                 nowLanguage = lang;//set the nowLanguage global variable
                 this.getAndSetDataByLang(nowLanguage);//set the data according to langugage you chose
                 setLocationList();
-            };
+        };
     
         render(){
             // console.log(this.setLanguage)
@@ -1186,7 +1183,7 @@ class App extends React.Component{
         }
     }
 
-main=()=>{
+let init=()=>{
     let urlCurr = theUrl+"en";//url to get info by language
     let xhr = new XMLHttpRequest()
     xhr.open("GET", urlCurr, true);
@@ -1205,4 +1202,4 @@ main=()=>{
     xhr.send();
 }
 
-main();
+init();
