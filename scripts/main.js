@@ -106,7 +106,7 @@ let currentCity;
 let showTheInfo = false;
 
 function main(){//intialise everything
-    setClicksPlusMinusText();
+    // setClicksPlusMinusText();
     $('.scroll-back').click(function () {
         $('.sofa-horiz').animate({
             scrollLeft: '-=271'
@@ -856,9 +856,9 @@ class TextSize extends React.Component{
 
     render(){
         return <div class="textSize">
-                    <p id="plus-text" class="resizeText pointable">+</p>
+                    <p id="plus-text" onClick={()=>{this.props.resizeText(0.1)}} class="resizeText pointable">+</p>
                     <p>A</p>
-                    <p id="minus-text" class="resizeText pointable">-</p>
+                    <p id="minus-text" onClick={()=>{this.props.resizeText(-0.1)}} class="resizeText pointable">-</p>
                 </div>;
     }
 }
@@ -970,7 +970,7 @@ class InfoOfStep extends React.Component{
     updateStepNeedText = (newStepNeedText) => {this.setState({stepNeedText: newStepNeedText})};
 
     render(){
-        return <div class="info-of-step">
+        return <div class="info-of-step"  style={{"font-size":this.props.textSize+"em"}}>
                     <div class="description-text">{this.state.descriptionText}</div>
                     <div class="step-need">{this.state.stepNeedText}</div>
                 </div>
@@ -1009,7 +1009,7 @@ class DescriptionOfStep extends React.Component{
 
     render(){
         return <div class="step-description">
-                    <InfoOfStep/>
+                    <InfoOfStep textSize={this.props.textSize}/>
                     <HelpDescription/>
                     <InfoAboutMarker/>
                 </div>
@@ -1025,7 +1025,7 @@ class SofaStep extends React.Component{
     render(){
         return <section class="sofa-step">
                     <SofaStepHeader/>
-                    <DescriptionOfStep/>
+                    <DescriptionOfStep textSize={this.props.textSize}/>
                 </section>
     }
 }
@@ -1051,7 +1051,7 @@ class SofaHoldInfo extends React.Component{
     render(){
         return <section class="hold-info main-section">
                     <div class="the-info">
-                        <SofaStep/>
+                        <SofaStep textSize={this.props.textSize}/>
                         <SofaMap/>
                     </div>
                 </section>
@@ -1069,7 +1069,7 @@ class SofaContent extends React.Component{
                     <div class="sofa-content">
                         <div class="empty_column"></div>
                         <SofaHorizScrollMenu/>
-                        <SofaHoldInfo/>
+                        <SofaHoldInfo textSize={this.props.textSize}/>
                     </div>
                 </div>
     }
@@ -1098,7 +1098,7 @@ class SideMenu extends React.Component{
     render(){
         return <section class="real-side-menu">
                     <Languages/>
-                    <TextSize/>
+                    <TextSize resizeText={this.props.resizeText}/>
                 </section>
     }
 }
@@ -1127,7 +1127,7 @@ class SofaHeader extends React.Component{
     render(){
         return <header class="sofa-header">
                     <CasualMenu/>
-                    <SideMenu/>
+                    <SideMenu resizeText={this.props.resizeText}/>
                 </header>
     }
 }
@@ -1142,17 +1142,29 @@ function loadJS(src) {
 }
 
 class App extends React.Component{
+
+        constructor(props){
+            super(props);
+            this.state = {
+                textSize: zoomValue
+            }
+        }
     
         componentDidMount() {
             loadJS("https://maps.googleapis.com/maps/api/js?key=AIzaSyB6thMLQSj4zVrofw-UAUkXu_5_D3ucCEI&callback=initMap");
             main();
         }
+
+        textSizeCallback = (inc) =>{
+            this.setState({textSize: this.state.textSize+inc});
+            console.log("zoomValue "+this.state.textSize);
+        }
     
         render(){
             return <div>
                         <LoadingWindow/>
-                        <SofaHeader/>
-                        <SofaContent/>
+                        <SofaHeader resizeText={this.textSizeCallback}/>
+                        <SofaContent textSize={this.state.textSize}/>
                     </div>
         }
     }
