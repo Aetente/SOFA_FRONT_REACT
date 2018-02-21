@@ -1133,19 +1133,6 @@ class SofaHeader extends React.Component{
 }
 
 
-
-  
-
-class MainContent extends React.Component{
-    render(){
-        return <div>
-                    <LoadingWindow/>
-                    <SofaHeader/>
-                    <SofaContent/>
-                </div>
-    }
-}
-
 function loadJS(src) {
     var ref = window.document.getElementsByTagName("script")[0];
     var script = window.document.createElement("script");
@@ -1166,9 +1153,6 @@ class App extends React.Component{
                         <LoadingWindow/>
                         <SofaHeader/>
                         <SofaContent/>
-                        {/* <script async
-                        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB6thMLQSj4zVrofw-UAUkXu_5_D3ucCEI&callback=initMap">
-                        </script> */}
                     </div>
         }
     }
