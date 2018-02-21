@@ -916,7 +916,10 @@ class SofaContent extends React.Component{
 
     componentWillReceiveProps(newProps){
         this.setState({currentStep: newProps.currentStep});
-        setColorHeaderInfo(newProps.currentStep)
+        setLocationList(this.props.nowLanguage,newProps.currentStep);
+        setColorHeaderInfo(newProps.currentStep);//set color for header of info according to chosen step
+        fillMapWithPlaces(map,this.props.nowLanguage,newProps.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
+    
     }
 
     clickOnStep = (steps,cS) => {
