@@ -115,9 +115,6 @@ function main(){//intialise everything
         }, 500, 'linear');
     });//scroll steps forward
     setInfoHeight();
-    // setDataByLang(nowLanguage);//set all info
-    // highlightLanguage(nowLanguage);//highlight choosen language
-    // setLocationList("en",0);
 }
 
 function onInfoBtnClick(){
@@ -266,6 +263,74 @@ function setMap(lat,lon,lang,step){
         zIndex: 2
     });//put marker
     fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+}
+
+class LocationList extends React.Component{
+    constructor(props){
+        super(props);
+        // console.log("constructor city list")
+        this.state = {
+            cityList: [],
+            currentCityIndex: 0,
+            currentCity: "0"
+        }
+        this.getCityList(this.props.nowLanguage, this.props.currentStep);
+        // console.log("constructor city list")
+    }
+
+    changeCurrentCity = (currentCity)=>{
+        
+    }
+
+    getCityList = (lang,step) =>{
+        let urlCurr = theUrl + `${lang}/city`;
+        let xhr = new XMLHttpRequest();
+        xhr.open("GET", urlCurr, true);
+        xhr.onload = function(){
+            this.setState({cityList: JSON.parse(xhr.response)});
+        }.bind(this);
+        xhr.send();
+    }
+
+    onCityChange = (e,lang,step) =>{
+        // console.log("onchange")
+        let theCurrentCity = e.target.value;
+        if( theCurrentCity!="0"){
+            let coords = theCurrentCity.split("|");
+            let lat = +coords[0];
+            let lon = +coords[1];
+            changePosition(lat, lon,lang,step);
+            this.setState({
+                currentCity: currentCity,
+                currentCityIndex: +coords[2]
+            });
+        }
+        else{
+            navigator.geolocation.getCurrentPosition(
+                function(pos){return successMap(pos,lang,step)},
+                function(err){return errorMap(err,lang,step)}, 
+                options);//get location
+        }
+    }
+
+    eachCity = (city,i) =>{
+        let strCoords = city.latitude+"|"+city.longitude+"|"+i;
+        // if(strCoords==this.state.currentCity){
+        //     this.setState({currentCityIndex: i});
+        // }
+        return <option value={strCoords} name={city.name}>{city.name}</option>
+    }
+
+    render(){
+        // console.log("list of cities")
+        return <div class="hold-list-div">
+                    <div class="control-list-div">
+                        <select class="the-list" onChange={((e)=>this.onCityChange(e,this.props.nowLanguage,this.props.currentStep))}>
+                            {this.state.cityList.map(this.eachCity)}
+                        </select>
+                    </div>
+                </div>
+    }
 }
 
 function setLocationList(lang,step){
@@ -685,7 +750,7 @@ class CityList extends React.Component{
     render(){
         return <div class="hold-search margin-to-zero">
                     <div class="control-list-div">
-                        {this.state.cityList.map(this.eachCity)}
+                        <LocationList nowLanguage={this.props.nowLanguage} currentStep={this.props.currentStep}/>
                     </div>
                 </div>;
     }
@@ -753,7 +818,7 @@ class SofaStepHeader extends React.Component{
     }
 
     render(){
-        console.log(this.props.steps)
+        // console.log(this.props.steps)
         return <div class="step-header">
                     <img class="step-img" src={"images/step_0"+(this.props.currentStep+1)+".png"}/>
                     <p class="step-head">{this.props.steps[this.props.currentStep].title.toUpperCase()}</p>
@@ -916,7 +981,7 @@ class SofaContent extends React.Component{
 
     componentWillReceiveProps(newProps){
         this.setState({currentStep: newProps.currentStep});
-        setLocationList(this.props.nowLanguage,newProps.currentStep);
+        // setLocationList(this.props.nowLanguage,newProps.currentStep);
         setColorHeaderInfo(newProps.currentStep);//set color for header of info according to chosen step
         fillMapWithPlaces(map,this.props.nowLanguage,newProps.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
     
@@ -927,14 +992,14 @@ class SofaContent extends React.Component{
         $(".div-to-remove").remove();
         this.setState({currentStep: cS});
         console.log(steps)
-        setLocationList(this.props.nowLanguage,cS);
+        // setLocationList(this.props.nowLanguage,cS);
         setColorHeaderInfo(cS);//set color for header of info according to chosen step
         setInfo(steps,cS);//set the info according to the step
         fillMapWithPlaces(map,this.props.nowLanguage,cS,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
     }
 
     render(){
-        console.log("SofaContent : "+this.state.currentStep)
+        // console.log("SofaContent : "+this.state.currentStep)
         return <div class="sofa-row main-section">
                     <div class="sofa-content">
                         <div class="empty_column"></div>
@@ -990,8 +1055,8 @@ class SofaHorizScrollMenuBody extends React.Component{
     }
 
     render(){
-        console.log("drawing horiz scroll");
-        console.log(this.props.steps)
+        // console.log("drawing horiz scroll");
+        // console.log(this.props.steps)
         return <section class="sofa-horiz">
                 {this.props.steps.map(this.eachStepName)}
                 <a id="item-filler"></a>
@@ -1039,7 +1104,7 @@ class CasualMenu extends React.Component{
         return <div class="cas-menu">
                     <IconImage/>
                     <Title/>
-                    <CityList/>
+                    <CityList  nowLanguage={this.props.nowLanguage} currentStep={this.props.currentStep}/>
                 </div>
     }
 }
@@ -1053,7 +1118,7 @@ class SofaHeader extends React.Component{
     render(){
         // console.log(this.props.setLanguage)
         return <header class="sofa-header">
-                    <CasualMenu/>
+                    <CasualMenu  nowLanguage={this.props.nowLanguage} currentStep={this.props.currentStep}/>
                     <SideMenu 
                         resizeText={this.props.resizeText}
                         setLanguage={this.props.setLanguage}/>
@@ -1087,7 +1152,7 @@ class App extends React.Component{
             setTitleText(lang);//set new title according to language you chose
             highlightLanguage(lang);//highlight the chosen language
             fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-            setLocationList(lang,this.state.currentStep);
+            // setLocationList(lang,this.state.currentStep);
             if(map)
             hideLoading();
         }
@@ -1109,7 +1174,7 @@ class App extends React.Component{
                 setTitleText(lang);//set new title according to language you chose
                 highlightLanguage(lang);//highlight the chosen language
                 fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-                setLocationList(lang,this.state.currentStep);
+                // setLocationList(lang,this.state.currentStep);
                 if(map)
                 hideLoading();
             }.bind(this);
@@ -1139,7 +1204,7 @@ class App extends React.Component{
                     currentStep: 0
                 });
                 this.getAndSetDataByLang(lang);//set the data according to langugage you chose
-                setLocationList(lang,this.state.currentStep+1);
+                // setLocationList(lang,this.state.currentStep+1);
         };
     
         render(){
@@ -1149,6 +1214,8 @@ class App extends React.Component{
                         <SofaHeader 
                             resizeText={this.textSizeCallback}
                             setLanguage={this.setLanguage}
+                            nowLanguage={this.state.nowLanguage} 
+                            currentStep={this.state.currentStep}
                         />
                         <SofaContent 
                             nowLanguage={this.state.nowLanguage}
@@ -1168,7 +1235,7 @@ let init=()=>{
     xhr.onload = function(e){
         let data = JSON.parse(xhr.response);
         let steps = data.steps;//get info about steps
-        console.log(steps)
+        // console.log(steps)
         ReactDOM.render(
             <App steps={steps}/>,
             document.getElementById('root')
