@@ -231,14 +231,7 @@ function changePosition(lat,lon,lang,step){
     fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);
 }
 
-//if succesided to get geolocation
-function successMap(pos,lang,step){
-    currentCity = "0";
-    lat = pos.coords.latitude;
-    lon = pos.coords.longitude;
-    setMap(lat,lon,lang,step);
-    
-}
+
 
 function setMap(lat,lon,lang,step){
     map = null;
@@ -265,148 +258,23 @@ function setMap(lat,lon,lang,step){
     fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
 }
 
-class LocationList extends React.Component{
-    constructor(props){
-        super(props);
-        // console.log("constructor city list")
-        this.state = {
-            cityList: [],
-            currentCityIndex: 0,
-            currentCity: "0"
-        }
-        this.getCityList(this.props.nowLanguage, this.props.currentStep);
-        // console.log("constructor city list")
-    }
 
-    changeCurrentCity = (currentCity)=>{
-        
-    }
-
-    getCityList = (lang,step) =>{
-        let urlCurr = theUrl + `${lang}/city`;
-        let xhr = new XMLHttpRequest();
-        xhr.open("GET", urlCurr, true);
-        xhr.onload = function(){
-            this.setState({cityList: JSON.parse(xhr.response)});
-        }.bind(this);
-        xhr.send();
-    }
-
-    onCityChange = (e,lang,step) =>{
-        // console.log("onchange")
-        let theCurrentCity = e.target.value;
-        if( theCurrentCity!="0"){
-            let coords = theCurrentCity.split("|");
-            let lat = +coords[0];
-            let lon = +coords[1];
-            changePosition(lat, lon,lang,step);
-            this.setState({
-                currentCity: currentCity,
-                currentCityIndex: +coords[2]
-            });
-        }
-        else{
-            navigator.geolocation.getCurrentPosition(
-                function(pos){return successMap(pos,lang,step)},
-                function(err){return errorMap(err,lang,step)}, 
-                options);//get location
-        }
-    }
-
-    eachCity = (city,i) =>{
-        let strCoords = city.latitude+"|"+city.longitude+"|"+i;
-        // if(strCoords==this.state.currentCity){
-        //     this.setState({currentCityIndex: i});
-        // }
-        return <option value={strCoords} name={city.name}>{city.name}</option>
-    }
-
-    render(){
-        // console.log("list of cities")
-        return <div class="hold-list-div">
-                    <div class="control-list-div">
-                        <select class="the-list" onChange={((e)=>this.onCityChange(e,this.props.nowLanguage,this.props.currentStep))}>
-                            {this.state.cityList.map(this.eachCity)}
-                        </select>
-                    </div>
-                </div>
-    }
-}
-
-function setLocationList(lang,step){
-    let urlCurr = theUrl + `${lang}/city`;
-    $.ajax({
-        url: urlCurr
-    })
-    .then(
-        (data)=>{
-            cityList = data;
-            console.log(data)
-            $(".hold-list-div").remove();
-            let holdListDiv = document.createElement("div");
-            holdListDiv.className = "hold-list-div";
-            $(".hold-search").append(holdListDiv);
-
-            let controlListDiv = document.createElement("div");
-            controlListDiv.className = "control-list-div";
-            holdListDiv.appendChild(controlListDiv);
-
-            let currentCityIndex = 0;
-            let listOfCitiesSelect = document.createElement("select");
-            listOfCitiesSelect.className = "the-list";
-
-            let cityOption = document.createElement("option");
-            cityOption.name = myLocationText[lang];
-            cityOption.innerHTML = myLocationText[lang];
-            cityOption.value = "0";
-            listOfCitiesSelect.appendChild(cityOption);
-            for(let i=0; i< cityList.length; i++){
-                let strCoords = cityList[i].latitude+"|"+cityList[i].longitude;
-                if(strCoords==currentCity){
-                    currentCityIndex = i;
-                }
-                let cityOption = document.createElement("option");
-                cityOption.name = cityList[i].name;
-                cityOption.innerHTML = cityList[i].name;
-                cityOption.value = strCoords;
-                listOfCitiesSelect.appendChild(cityOption);
-            }
-            
-            listOfCitiesSelect.onchange = function(){
-                let theCurrentCity = listOfCitiesSelect.value;
-                if( theCurrentCity!="0"){
-                // currentCity = listOfCitiesSelect.value;
-                    currentCity = theCurrentCity;
-                    let coords = currentCity.split("|");
-                    lat = +coords[0];
-                    lon = +coords[1];
-                    changePosition(lat, lon,lang,step);
-                }
-                else{
-                    navigator.geolocation.getCurrentPosition(
-                        function(pos){return successMap(pos,lang,step)},
-                        function(err){return errorMap(err,lang,step)}, 
-                        options);//get location
-                }
-            }
-            controlListDiv.appendChild(listOfCitiesSelect);
-            if(currentCityIndex){
-                listOfCitiesSelect.value = cityList[currentCityIndex].latitude+"|"+cityList[currentCityIndex].longitude;
-            }else{
-                listOfCitiesSelect.value = "0";
-            }
-            // holdListDiv.index = 1;
-            // map.controls[google.maps.ControlPosition.TOP_CENTER].push(holdListDiv);
-        }
-    );
+//if succesided to get geolocation
+function successMap(pos,lang,step){
+    currentCity = "0";
+    lat = pos.coords.latitude;
+    lon = pos.coords.longitude;
+    setMap(lat,lon,lang,step);
+    console.log(app);
+    app.changeGlobalPosition(lat,lon);
+    app.setCurrentCity(lat+"|"+lon+"|0");
+    return [lat,lon];
 }
 
 //if geolocation error happened
 function errorMap(err,lang,step) {
     console.warn(`ERROR(${err.code}): ${err.message}`);
-    // $(".step-description").css("grid-template-columns", "1fr");
-    // $(".the-info").css("grid-template-columns","1fr");
-    if(!currentCity){
+    if(app.state.currentCity=="null"){
         let urlCurr = theUrl + `${lang}/city`;
         $.ajax({
             url: urlCurr
@@ -415,24 +283,30 @@ function errorMap(err,lang,step) {
             (data)=>{
                 cityList = data;
                 let TelAviv = null;
+                let indexCity = 0;
                 TelAviv = data.find(
-                    (city)=>{
+                    (city,i)=>{
                         if(city.name=="Tel Aviv"||city.name == "תל אביב"||city.name=="Тель-Авив"){
+                            indexCity=i;
                             return city;
                         }
                     }
                 );
                 currentCity = TelAviv.latitude+"|"+TelAviv.longitude;
-                lat = TelAviv.latitude;
-                lon = TelAviv.longitude;
+                let lat = TelAviv.latitude;
+                let lon = TelAviv.longitude;
                 setMap(lat,lon,lang,step);
-                document.getElementsByClassName("the-list")[0].value = currentCity;
+                // document.getElementsByClassName("the-list")[0].value = currentCity;
                 hideLoading();
+                app.changeGlobalPosition(lat,lon);
+                app.setCurrentCity(lat+"|"+lon+"|"+indexCity);
+                return [lat,lon];
             }
         );
     }
     else{
         document.getElementsByClassName("the-list")[0].value = currentCity;
+        return [currentCity.split("|")[0],currentCity.split("|")[2]];
         hideLoading();
     }
 };
@@ -726,6 +600,90 @@ class Title extends React.Component{
     }
 }
 
+class LocationList extends React.Component{
+    constructor(props){
+        super(props);
+        // console.log("constructor city list")
+        this.state = {
+            currentCityIndex: this.props.currentCity.split("|")[2],
+            currentCity: this.props.currentCity
+        }
+        // console.log("constructor city list")
+    }
+
+    onCityChange = (e,lang,step) =>{
+        // console.log("onchange")
+        let theCurrentCity = e.target.value;
+        if( theCurrentCity!="0"){
+            let coords = theCurrentCity.split("|");
+            let lat = +coords[0];
+            let lon = +coords[1];
+            this.props.changeGlobalPosition(lat,lon);
+            console.log(theCurrentCity)
+            changePosition(lat, lon,lang,step);
+            this.setState({
+                currentCity: theCurrentCity,
+                currentCityIndex: +coords[2]
+            });
+        }
+        else{
+            navigator.geolocation.getCurrentPosition(
+                function(pos){return successMap(pos,lang,step)},
+                function(err){return errorMap(err,lang,step)}, 
+                options);//get location
+        }
+    }
+
+    eachCity = (city,i) =>{
+        let strCoords = city.latitude+"|"+city.longitude;
+        let strCoordsI = strCoords+"|"+i;
+        // if(strCoords==this.state.currentCity){
+        //     this.setState({currentCityIndex: i});
+        // }
+        // console.log(strCoords+" : "+this.props.currentCity)
+        if(strCoords==this.props.currentCity){
+            console.log(<option selected value={strCoordsI} name={city.name}>{city.name}</option>)
+            return <option selected value={strCoordsI} name={city.name}>{city.name+"!!!"}</option>
+        }
+        else{
+            return <option value={strCoordsI} name={city.name}>{city.name}</option>
+        }
+    }
+
+    render(){
+        // console.log("list of cities")
+        console.log(this.props.currentCity)
+        if(this.state.currentCity=="null"){
+            return <div class="hold-list-div">
+                        <div class="control-list-div">
+                            <select 
+                                value={this.props.currentCity}
+                                class="the-list"
+                                onChange={((e)=>this.onCityChange(e,this.props.nowLanguage,this.props.currentStep))}
+                            >
+                                <option value="0" name={myLocationText[this.props.nowLanguage]}>{myLocationText[this.props.nowLanguage]}</option>
+                                {this.props.cityList.map(this.eachCity)}
+                            </select>
+                        </div>
+                    </div>
+        }
+        else{
+            return <div class="hold-list-div">
+            <div class="control-list-div">
+                <select 
+                    value={this.state.currentCity}
+                    class="the-list"
+                    onChange={((e)=>this.onCityChange(e,this.props.nowLanguage,this.props.currentStep))}
+                >
+                    <option value="0" name={myLocationText[this.props.nowLanguage]}>{myLocationText[this.props.nowLanguage]}</option>
+                    {this.props.cityList.map(this.eachCity)}
+                </select>
+            </div>
+        </div>
+        }
+    }
+}
+
 class CityList extends React.Component{
     
     constructor(props){
@@ -741,16 +699,23 @@ class CityList extends React.Component{
 
     eachCity = (city,i) => {return <option value = {this.state.cityValueList[i]}>{city}</option>};
 
-    upadateCityList = (newCityList, newCityValues) =>{this.setState({
-                                                            cityList: newCityList,
-                                                            cityValueList: newCityValues
-                                                        }
-                                                    )};
+    upadateCityList = (newCityList, newCityValues) =>{
+        this.setState({
+            cityList: newCityList,
+            cityValueList: newCityValues
+        });
+    };
 
     render(){
         return <div class="hold-search margin-to-zero">
                     <div class="control-list-div">
-                        <LocationList nowLanguage={this.props.nowLanguage} currentStep={this.props.currentStep}/>
+                        <LocationList 
+                            cityList={this.props.cityList}
+                            currentCity={this.props.currentCity}
+                            changeGlobalPosition={this.props.changeGlobalPosition}
+                            nowLanguage={this.props.nowLanguage}
+                            currentStep={this.props.currentStep}
+                        />
                     </div>
                 </div>;
     }
@@ -973,29 +938,20 @@ class SofaContent extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            currentStep: 0,
             stepColor: "#00508c",
             stepClicked: false
         }
     }
 
-    componentWillReceiveProps(newProps){
-        this.setState({currentStep: newProps.currentStep});
-        // setLocationList(this.props.nowLanguage,newProps.currentStep);
-        setColorHeaderInfo(newProps.currentStep);//set color for header of info according to chosen step
-        fillMapWithPlaces(map,this.props.nowLanguage,newProps.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
-    
-    }
-
     clickOnStep = (steps,cS) => {
         $(".description-help").css("grid-column","1/3");
         $(".div-to-remove").remove();
-        this.setState({currentStep: cS});
+        // this.setState({currentStep: cS});
+        this.props.changeCurrentStep(cS);
         console.log(steps)
-        // setLocationList(this.props.nowLanguage,cS);
         setColorHeaderInfo(cS);//set color for header of info according to chosen step
         setInfo(steps,cS);//set the info according to the step
-        fillMapWithPlaces(map,this.props.nowLanguage,cS,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
+        fillMapWithPlaces(map,this.props.nowLanguage,cS,this.props.lat,this.props.lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
     }
 
     render(){
@@ -1009,7 +965,7 @@ class SofaContent extends React.Component{
                         <SofaHoldInfo 
                             textSize={this.props.textSize}
                             steps={this.props.steps}
-                            currentStep={this.state.currentStep}/>
+                            currentStep={this.props.currentStep}/>
                     </div>
                 </div>
     }
@@ -1088,7 +1044,9 @@ class SideMenu extends React.Component{
 
     render(){
         return <section class="real-side-menu">
-                    <Languages setLanguage={this.props.setLanguage}/>
+                    <Languages 
+                        setLanguage={this.props.setLanguage}
+                        currentStep={this.props.currentStep}/>
                     <TextSize resizeText={this.props.resizeText}/>
                 </section>
     }
@@ -1104,7 +1062,13 @@ class CasualMenu extends React.Component{
         return <div class="cas-menu">
                     <IconImage/>
                     <Title/>
-                    <CityList  nowLanguage={this.props.nowLanguage} currentStep={this.props.currentStep}/>
+                    <CityList 
+                        cityList={this.props.cityList}
+                        currentCity={this.props.currentCity}
+                        changeGlobalPosition={this.props.changeGlobalPosition} 
+                        nowLanguage={this.props.nowLanguage}
+                        currentStep={this.props.currentStep}
+                    />
                 </div>
     }
 }
@@ -1118,10 +1082,17 @@ class SofaHeader extends React.Component{
     render(){
         // console.log(this.props.setLanguage)
         return <header class="sofa-header">
-                    <CasualMenu  nowLanguage={this.props.nowLanguage} currentStep={this.props.currentStep}/>
+                    <CasualMenu  
+                        cityList={this.props.cityList}
+                        currentCity={this.props.currentCity}
+                        changeGlobalPosition={this.props.changeGlobalPosition}
+                        nowLanguage={this.props.nowLanguage} 
+                        currentStep={this.props.currentStep}/>
                     <SideMenu 
                         resizeText={this.props.resizeText}
-                        setLanguage={this.props.setLanguage}/>
+                        setLanguage={this.props.setLanguage}
+                        currentStep={this.props.currentStep}
+                        />
                 </header>
     }
 }
@@ -1143,16 +1114,38 @@ class App extends React.Component{
                 textSize: 1,
                 steps: this.props.steps,
                 currentStep: 0,
-                nowLanguage: "en"
+                nowLanguage: "en",
+                lat: 32.0852999,
+                lon: 34.78176759999999,
+                cityList: [],
+                currentCity: "null"
             }
+            this.getCityList(this.state.nowLanguage, this.state.currentStep);
+        }
+
+        changeCurrentStep = (step) => {
+            this.setState({currentStep: step});
+        }
+
+        setCurrentCity = (currentCity) => {
+            this.setState({currentCity: currentCity});
+        }
+
+        getCityList = (lang,step) =>{
+            let urlCurr = theUrl + `${lang}/city`;
+            let xhr = new XMLHttpRequest();
+            xhr.open("GET", urlCurr, true);
+            xhr.onload = function(){
+                this.setState({cityList: JSON.parse(xhr.response)});
+            }.bind(this);
+            xhr.send();
         }
 
         setDataByLang = (lang)=>{
             showLoading();
             setTitleText(lang);//set new title according to language you chose
             highlightLanguage(lang);//highlight the chosen language
-            fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-            // setLocationList(lang,this.state.currentStep);
+            fillMapWithPlaces(map,lang,this.state.currentStep,this.state.lat,this.state.lon,MIN_KM,MAX_KM,INC);//fill the map with markers
             if(map)
             hideLoading();
         }
@@ -1173,8 +1166,7 @@ class App extends React.Component{
                 console.log(this.state.steps);
                 setTitleText(lang);//set new title according to language you chose
                 highlightLanguage(lang);//highlight the chosen language
-                fillMapWithPlaces(map,lang,this.state.currentStep,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
-                // setLocationList(lang,this.state.currentStep);
+                fillMapWithPlaces(map,lang,this.state.currentStep,this.state.lat,this.state.lon,MIN_KM,MAX_KM,INC);//fill the map with markers
                 if(map)
                 hideLoading();
             }.bind(this);
@@ -1194,40 +1186,48 @@ class App extends React.Component{
             this.setState({textSize: this.state.textSize+inc});
         }
 
-        setContentCurrentStep = () =>{
-
-        }
-
         setLanguage = (lang) =>{
                 this.setState({
-                    nowLanguage: lang,
-                    currentStep: 0
+                    nowLanguage: lang
                 });
+                this.getCityList(lang, this.state.currentStep);
                 this.getAndSetDataByLang(lang);//set the data according to langugage you chose
-                // setLocationList(lang,this.state.currentStep+1);
         };
+
+        changeGlobalPosition =(lat, lon)=>{
+            this.setState({
+                lat: lat,
+                lon: lon
+            });
+        }
     
         render(){
             // console.log(this.setLanguage)
             return <div>
                         <LoadingWindow/>
                         <SofaHeader 
+                            cityList={this.state.cityList}
+                            currentCity={this.state.currentCity}
+                            changeGlobalPosition={this.changeGlobalPosition}
                             resizeText={this.textSizeCallback}
                             setLanguage={this.setLanguage}
                             nowLanguage={this.state.nowLanguage} 
                             currentStep={this.state.currentStep}
                         />
                         <SofaContent 
+                            changeCurrentStep = {this.changeCurrentStep}
                             nowLanguage={this.state.nowLanguage}
                             textSize={this.state.textSize}
                             steps={this.state.steps}
                             stepDesc={this.state.stepDesc}
                             currentStep={this.state.currentStep}
+                            lat={this.state.lat}
+                            lon={this.state.lon}
                         />
                     </div>
         }
     }
-
+let app = null;
 let init=()=>{
     let urlCurr = theUrl+"en";//url to get info by language
     let xhr = new XMLHttpRequest()
@@ -1237,14 +1237,17 @@ let init=()=>{
         let steps = data.steps;//get info about steps
         // console.log(steps)
         ReactDOM.render(
-            <App steps={steps}/>,
+            <App ref={(child)=>app=child} steps={steps}/>,
             document.getElementById('root')
         );
-    }
+        
+    }.bind(app)
+    
     xhr.onerror = function(e){
         console.log(e)
     }
     xhr.send();
+    console.log(app)
 }
 
 init();
