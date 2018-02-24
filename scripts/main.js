@@ -1,5 +1,3 @@
-// $().ready(main);
-
 const theUrl = "https://olimshelper.herokuapp.com/";//api
 const MIN_KM=1;
 const MAX_KM = 10;
@@ -37,10 +35,14 @@ let icons = [
 ];//icons for markers
 let geocoder;//with this you decode placeId to get more information
 let closeBtnText = {
-    en: "CLOSE",
-    ru: "ЗАКРЫТЬ",
-    he: "לסגור",
-    fr: "FERMER"
+    en: "X",
+    ru: "X",
+    he: "X",
+    fr: "X"
+    // en: "CLOSE",
+    // ru: "ЗАКРЫТЬ",
+    // he: "לסגור",
+    // fr: "FERMER"
 };
 let showRouteBtnText = {
     en: "SHOW ROUTE",
@@ -49,6 +51,7 @@ let showRouteBtnText = {
     fr: "MONTRER LE CHEMIN"
 };
 let goToTheSiteBtnText = {
+    
     en: "GO TO THE SITE",
     ru: "ПЕРЕЙТИ К САЙТУ",
     he: "עבור אל האתר",
@@ -114,36 +117,17 @@ function main(){//intialise everything
             scrollLeft: '+=271'
         }, 500, 'linear');
     });//scroll steps forward
+    $(window).on( 'resize',
+    function(){
+        google.maps.event.trigger( map, 'resize' );
+    }
+  );//resize the map
     setInfoHeight();
 }
 
-function onInfoBtnClick(){
-    showTheInfo = !showTheInfo;
-    toggleShowInfo(showTheInfo);
-}
-
-function setInfoBtnClick(){
-    $(".info-head").click(
-        function(){
-            showTheInfo = !showTheInfo;
-            toggleShowInfo(showTheInfo);
-        }
-    )
-}
-
-function toggleShowInfo(toShow){
-    if(toShow){
-        $(".info-of-step").show();
-        $(".description-help").hide();
-        $(".info-of-marker").hide();
-        
-    }
-    else{
-        $(".info-of-step").hide();
-        $(".description-help").show();
-        $(".info-of-marker").show();
-    }
-}
+//TODO fix address error
+//TODO remake style appliance for info window and etc...
+//TODO make better logic
 
 function setInfoHeight(){
     if(window.innerWidth>767){
@@ -163,35 +147,16 @@ function hideLoading(){
 }
 
 function setRightTextAlign(){
-    $(".info-of-step").css("text-align","right");
+    if(document.getElementsByClassName("info-of-step")[0])
+    document.getElementsByClassName("info-of-step")[0].style.textAlign = "right";
     // $(".menu-item p").css("text-align","right");
     
 }
 
 function setLeftTextAlign(){
-    $(".info-of-step").css("text-align","left");
+    if(document.getElementsByClassName("info-of-step")[0])
+    document.getElementsByClassName("info-of-step")[0].style.textAlign = "left";
     // $(".menu-item p").css("text-align","left");
-}
-
-//set the color of header of info of step according to chosen step
-function setColorHeaderInfo(currentStep){
-    $(".step-header").css("background-color",stepColors[currentStep]);
-}
-
-//set the info according to step
-function setInfo(steps,numbStep){
-    console.log(steps[numbStep].title)
-    $(".step-head").text(steps[numbStep].title);
-    $(".description-text").text(steps[numbStep].description);
-    $(".step-need").text(steps[numbStep].need);
-    $(".step-img").attr("src","images/step_0"+(numbStep+1)+".png");
-}
-
-//set the names of steps according to current language
-function setSelectSteps(steps){
-    for(var i=0;i<steps.length;i++){
-        $("#item"+(i+1)+" > .choose-step").text(steps[i].title);
-    }
 }
 
 //highlight the chosen language
@@ -205,22 +170,22 @@ function highlightLanguage(nowLanguage){
 
 //set the site title to name according to language
 function setTitleText(nowLanguage){
-    let title = $(".title-text");
+    let title = document.getElementsByClassName("title-text")[0];
     switch(nowLanguage){
         case "en":
-            title.text("10 STEPS OF A NEW REPATRIATE");
+            title.innerText = "10 STEPS OF A NEW REPATRIATE";
             break;
         case "ru":
-            title.text("10 ШАГОВ НОВОГО РЕПАТРИАНТА");
+            title.innerText = "10 ШАГОВ НОВОГО РЕПАТРИАНТА";
             break;
         case "he":
-            title.text("עשר שלבים של עולה חדש");
+            title.innerText = "עשר שלבים של עולה חדש";
             break;
         case "fr":
-            title.text("10 ÉTAPES D'UN NOUVEAU RAPATRIANT");
+            title.innerText = "10 ÉTAPES D'UN NOUVEAU RAPATRIANT";
             break;
         default:
-            title.text("10 STEPS OF A NEW REPATRIATE");
+            title.innerText = "10 STEPS OF A NEW REPATRIATE";
             break;
     }
 }
@@ -228,10 +193,8 @@ function setTitleText(nowLanguage){
 function changePosition(lat,lon,lang,step){
     myMarker.setPosition({lat:lat,lng:lon});
     map.setCenter({lat:lat,lng:lon});
-    fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);
+    app.fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);
 }
-
-
 
 function setMap(lat,lon,lang,step){
     map = null;
@@ -255,67 +218,8 @@ function setMap(lat,lon,lang,step){
         icon: icon,
         zIndex: 2
     });//put marker
-    fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+    app.fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
 }
-
-
-//if succesided to get geolocation
-function successMap(pos,lang,step){
-    currentCity = "0";
-    lat = pos.coords.latitude;
-    lon = pos.coords.longitude;
-    setMap(lat,lon,lang,step);
-    console.log(app);
-    app.changeGlobalPosition(lat,lon);
-    app.setCurrentCity(lat+"|"+lon+"|0");
-    return [lat,lon];
-}
-
-//if geolocation error happened
-function errorMap(err,lang,step) {
-    console.warn(`ERROR(${err.code}): ${err.message}`);
-    if(app.state.currentCity=="null"){
-        let urlCurr = theUrl + `${lang}/city`;
-        $.ajax({
-            url: urlCurr
-        })
-        .then(
-            (data)=>{
-                cityList = data;
-                let TelAviv = null;
-                let indexCity = 0;
-                TelAviv = data.find(
-                    (city,i)=>{
-                        if(city.name=="Tel Aviv"||city.name == "תל אביב"||city.name=="Тель-Авив"){
-                            indexCity=i;
-                            return city;
-                        }
-                    }
-                );
-                currentCity = TelAviv.latitude+"|"+TelAviv.longitude;
-                let lat = TelAviv.latitude;
-                let lon = TelAviv.longitude;
-                setMap(lat,lon,lang,step);
-                // document.getElementsByClassName("the-list")[0].value = currentCity;
-                hideLoading();
-                app.changeGlobalPosition(lat,lon);
-                app.setCurrentCity(lat+"|"+lon+"|"+indexCity);
-                return [lat,lon];
-            }
-        );
-    }
-    else{
-        document.getElementsByClassName("the-list")[0].value = currentCity;
-        return [currentCity.split("|")[0],currentCity.split("|")[2]];
-        hideLoading();
-    }
-};
-
-$(window).on( 'resize',
-  function(){
-      google.maps.event.trigger( map, 'resize' );
-  }
-);//resize the map
 
 function clearMap(){//clear markers
     if(markers.length>0){
@@ -356,206 +260,16 @@ function unhighlightMarkers(step){//unhilight all markers
     }
 }
 
-//event when marker was clicked
-function onAddressClick(sofaAddress,markerNumber,place,lang,step){
-    // $(".sofa-address").hide(0);//hide all markers
-    $(".description-help").css("grid-column","1");
-    $(".div-to-remove").remove();
-    highlightMarker(markerNumber);//highlight the chosen marker on the map
-    let infoOfMarker = $(".info-of-marker");//get the marker container
-    let divToRemove =document.createElement("div");//create the element where the information about marker would be put, so that it could easily be removed without deleting data about all markers
-    divToRemove.className = "div-to-remove";
-    infoOfMarker.append(divToRemove);
-
-    let divWrap = document.createElement("div");//create wrapper
-     divToRemove.appendChild(divWrap);
-
-    let markerInfo = document.createElement("div");//create a button to close the info about current marker
-    markerInfo.className="marker-holder";
-    divWrap.appendChild(markerInfo);
-    let showBtn = document.createElement("button");
-    showBtn.innerText = showRouteBtnText[lang];
-    showBtn.className = "marker-btn";
-    // console.log(`https://www.google.com/maps/dir/?api=1&origin=${myMarker.getPosition().lat()},${myMarker.getPosition().lng()}&destination=${place.latitude},${place.longitude}`);
-    showBtn.onclick = function(){
-        window.open(`https://www.google.com/maps/dir/?api=1&origin=${myMarker.getPosition().lat()},${myMarker.getPosition().lng()}&destination=${place.latitude},${place.longitude}`,`_blank`);
-    }
-    markerInfo.appendChild(showBtn);
-    let urlBtn = document.createElement("button");
-    urlBtn.innerText = goToTheSiteBtnText[lang];
-    urlBtn.className = "marker-btn";
-    urlBtn.onclick = function(){
-        window.open("http://"+place.url,"_blank");
-    }
-    markerInfo.appendChild(urlBtn);
-    let closeBtn = document.createElement("button");
-    closeBtn.innerText = closeBtnText[lang];
-    closeBtn.className = "marker-btn";
-    closeBtn.onclick = function(){
-        closeCurrentMarker(step);
-        $(".description-help").css("grid-column","1/3");
-    }
-    markerInfo.appendChild(closeBtn);
-    
-
-    markerInfo = document.createElement("div");//create wrapper which sometimes would be a grid or not depending on the className
-    markerInfo.className = "div-to-make-flex-work";
-    divWrap.appendChild(markerInfo);
-    let nameH5 = document.createElement("h5");//put the name of the marker
-    nameH5.innerText = place.name;
-    nameH5.className = "make-flex";
-    markerInfo.appendChild(nameH5);
-
-    let phoneH6 = document.createElement("h6");//put the name of the marker
-    phoneH6.innerText = phonesText[lang]+ ":";
-    divWrap.appendChild(phoneH6);
-
-    for(var j=0; j<place.phones.length; j++){//put the phone numbers of current marker
-        markerInfo = document.createElement("div");
-        markerInfo.className = "div-to-make-flex-work";
-        divWrap.appendChild(markerInfo);
-        let phoneP = document.createElement("p");
-        phoneP.className = "make-flex";
-        phoneP.innerText = place.phones[j];
-        markerInfo.appendChild(phoneP);
-    }
-
-    let scheduleH6 = document.createElement("h6");//put the name of the marker
-    scheduleH6.innerText = scheduleText[lang]+ ":";
-    divWrap.appendChild(scheduleH6);
-
-    for(var k=0; k<7;k++){//put the schedule of current marker
-        markerInfo = document.createElement("div");
-        markerInfo.className = "marker-info";
-        divWrap.appendChild(markerInfo);
-        let scheduleP = document.createElement("p");
-        scheduleP.className = "make-flex";
-        let strDay = place.schedule[k];
-        let nameWeek = document.createElement("p");
-        nameWeek.className = "make-flex";
-        nameWeek.innerText = weekDay[lang][k];
-        scheduleP.innerText = strDay;
-        markerInfo.appendChild(nameWeek);
-        markerInfo.appendChild(scheduleP);
-    }
-}
-
 function closeCurrentMarker(step){//close the clicked marker
     unhighlightMarkers(step);
-    $(".div-to-remove").remove();//remove all previous data about the marker
-    $(".sofa-address").show(0);//show all markers
-}
-
-//fill the list of markers
-function fillSofaAddresses(places,lang,step){
-    let descriptionHelp = $(".description-help");//get the container of markers
-    descriptionHelp.empty();//empty it from previous markers
-    if(places.length>0){//if there are any places
-        for(let i=0; i<places.length; i++){
-            let sofaAddress = document.createElement("div");//create the div which contains some information about the marker
-            sofaAddress.className = "sofa-address pointable marker"+i;//set the class name for it to set styles from css
-            descriptionHelp.append(sofaAddress);//appendChild it to element where it should be contained
-            sofaAddress.onclick = ()=> onAddressClick(sofaAddress,i,places[i],lang,step);// set the click event. when it clicked the more information appears
-
-            let placeImg = document.createElement("img");
-            placeImg.src=`http://www.google.com/s2/favicons?domain=${places[i].url}`;
-            placeImg.height = 24;
-            placeImg.width = 24;
-            placeImg.className = "img-place";
-            sofaAddress.appendChild(placeImg);
-
-            let nameH5 = document.createElement("h5");//add the name of marker
-            nameH5.innerText = places[i].name;
-            nameH5.className = "name-place";
-            sofaAddress.appendChild(nameH5);
-
-            let holdOpenButton = document.createElement("p");
-            holdOpenButton.className = "expand-button";
-            holdOpenButton.innerText = "V";
-            sofaAddress.appendChild(holdOpenButton);
-
-            let addressP = document.createElement("p");//add the address for marker
-            let addressString = "";
-            addressP.className = "address-name";
-            // console.log(places[i]);
-            geocoder.geocode({"placeId":places[i].placeId},//decode the placeId to get address
-            function(res, status){
-                geocodeFunc(res,status,places[i].placeId,addressP,sofaAddress);
-            });
-        }
-    }
-}
-
-function geocodeFunc(res,status,placeId,addressP,sofaAddress){
-    if(status=="OK"){
-        let aC = res[0].address_components;
-        let addressString = `${aC[2].long_name}, ${aC[1].short_name}, ${aC[0].short_name}`;
-        addressP.innerText = addressString;
-        sofaAddress.appendChild(addressP);
-    }
-    else{//TODO what should happen when you dont get the address(it happens a lot more frequently than expected)
-        console.log(status);
-        addressP.innerText = addressString;
-        sofaAddress.appendChild(addressP);
-    }
-}
-
-//fill the map with markers
-function fillMapWithPlaces(map,lang,step,lat,lon,min,max,inc){
-    if(map!=null){//if the map was initialized
-        let urlCurr = theUrl+`step/${lang}/${step+1}/area/${lat}/${lon}/${min}/${max}/${inc}`;//url request
-        // console.log(myMarker.getPosition());
-        bounds = new google.maps.LatLngBounds();
-        bounds.extend(myMarker.getPosition());
-        $.ajax({
-            url: urlCurr
-        })
-        .then(function(placesArr){
-            clearMap();//clear map from markers if threre are already some
-            
-            if(placesArr.length!=0){//if there are any places
-                
-                for(var i=0;i<placesArr.length;i++){
-                    let icon = {
-                        url: icons[step+1], // url
-                        scaledSize: new google.maps.Size(20, 30), // scaled size
-                        origin: new google.maps.Point(0,0), // origin
-                        anchor: new google.maps.Point(0, 0) // anchor
-                    };//set the icon for marker
-                    let marker = new google.maps.Marker({
-                        map: map,
-                        icon: icon,
-                        place: {
-                        placeId: placesArr[i].placeId,
-                        location: { lat: placesArr[i].latitude, lng: placesArr[i].longitude}
-                        },
-                        zIndex: 0
-                    });//set marker
-                    bounds.extend({ lat: placesArr[i].latitude, lng: placesArr[i].longitude});
-                    markers.push(marker);//push marker to gloabal array so that you could delete them in future or change icons
-
-                }
-                map.fitBounds(bounds);
-                fillSofaAddresses(placesArr,lang,step);//fill the div with information about markers
-            }
-            else{
-                let infoOfMarker = $(".info-of-marker");
-                infoOfMarker.empty();
-                $(".sofa-address").empty();
-                console.log("no places found");
-            }
-        });
-        hideLoading();
-    }
-    
 }
 
 function initMap(){//initialize the google map
     bounds = new google.maps.LatLngBounds();
     geocoder = new google.maps.Geocoder;//get the geocoder to decode placeIds in further
     navigator.geolocation.getCurrentPosition(
-        function(pos){return successMap(pos,"en",0)},
-        function(err){return errorMap(err,"en",0)}, 
+        function(pos){return app.successMap(pos,"en",0)},
+        function(err){return app.errorMap(err,"en",0)}, 
         options);//get location
 }
 
@@ -628,8 +342,8 @@ class LocationList extends React.Component{
         }
         else{
             navigator.geolocation.getCurrentPosition(
-                function(pos){return successMap(pos,lang,step)},
-                function(err){return errorMap(err,lang,step)}, 
+                function(pos){return this.successMap(pos,lang,step)},
+                function(err){return this.errorMap(err,lang,step)}, 
                 options);//get location
         }
     }
@@ -652,7 +366,7 @@ class LocationList extends React.Component{
 
     render(){
         // console.log("list of cities")
-        console.log(this.props.currentCity)
+        // console.log(this.props.currentCity)
         if(this.state.currentCity=="null"){
             return <div class="hold-list-div">
                         <div class="control-list-div">
@@ -784,7 +498,7 @@ class SofaStepHeader extends React.Component{
 
     render(){
         // console.log(this.props.steps)
-        return <div class="step-header">
+        return <div class="step-header" style={{backgroundColor:stepColors[this.props.currentStep]}}>
                     <img class="step-img" src={"images/step_0"+(this.props.currentStep+1)+".png"}/>
                     <p class="step-head">{this.props.steps[this.props.currentStep].title.toUpperCase()}</p>
                     <p onClick={this.onInfoBtnClick} class="info-head pointable">{this.state.infoBtnText[this.state.nowInfoIndex]}</p>
@@ -823,15 +537,80 @@ class HelpDescription extends React.Component{
     constructor(props){
         super(props);
         this.state={
-            toShow: this.props.toShow
+            addressList: []
         }
     }
 
-    toggleShowMarker =()=>{this.setState({toShow:!this.state.toShow})}
+    onAddressClick = (place,i)=>{
+        this.props.toggleMarkerInfo(place,true);
+        highlightMarker(i);
+    }
+
+    compareAddressLists = (a,b) => {
+        if(a.length!=b.length){
+            return true;
+        }
+        if(a.length==0&&b.length==0){
+            return false;
+        }
+        for(let i=0; i<a.length; i++){
+            if(a[i]!=b[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    componentDidUpdate = (prevProps,prevState) =>{
+        if(this.compareAddressLists(this.props.places,prevProps.places)){
+            let placesArr = [];
+            let hoho = async () => {
+                console.log("async statr")
+                console.log(this.props)
+                this.props.places.forEach((place) => {
+                    geocoder.geocode({"placeId":place.placeId},//decode the placeId to get address
+                        function(res, status){
+                            console.log(status)
+                            placesArr.push(this.geocodeFunc(res,status));
+                            console.log(placesArr)
+                        }.bind(this,placesArr)
+                    );
+                }, this);
+                console.log("placesArr")
+                console.log(placesArr)
+                this.setState({addressList: placesArr})
+            };
+            hoho();
+        }
+    }
+
+    geocodeFunc = (res,status) => {
+        console.log(status)
+        console.log(res)
+        if(status=="OK"){
+            let aC = res[0].address_components;
+            return `${aC[2].long_name}, ${aC[1].short_name}, ${aC[0].short_name}`;
+        }
+        else{//TODO what should happen when you dont get the address(it happens a lot more frequently than expected)
+            console.log(status);
+            return "address error";
+        }
+    }
+
+    eachAddress = (place, i) =>{
+        let addressString = "";
+        return <div class={"sofa-address pointable marker"+i} onClick={()=>this.onAddressClick(place,i)}>
+                    <img class="img-place" height="24" width="24" src={`http://www.google.com/s2/favicons?domain=${place.url}`}/>
+                    <h5 class="name-place">{place.name}</h5>
+                    <p class="expand-button">V</p>
+                    <p class="address-name">{this.state.addressList[i]}</p>
+                </div>
+    }
 
     render(){
-        return <div class="description-help">
-        
+        console.log(this.props)
+        return <div class={this.props.classText}>
+                    {this.props.places.map(this.eachAddress)}
                 </div>
     }
 }
@@ -842,8 +621,38 @@ class InfoAboutMarker extends React.Component{
         super(props);
     }
 
+    eachPhone = (phone) => {
+        return <div class="div-to-make-flex-work">
+                    <p class="make-flex">{phone}</p>
+                </div>
+    }
+
+    eachSchedule = (day ,i) =>{
+        return  <div class="marker-info">
+                    <p class="make-flex">
+                        {weekDay[this.props.nowLanguage][i]}
+                    </p>
+                    <p class="make-flex">
+                        {day}
+                    </p>
+                </div>
+    }
+
     render(){
-        return <div class="info-of-marker"></div>
+        return <div class="info-of-marker">
+                    <div class="marker-holder">
+                        <button onClick={()=>window.open(`https://www.google.com/maps/dir/?api=1&origin=${myMarker.getPosition().lat()},${myMarker.getPosition().lng()}&destination=${this.props.place.latitude},${this.props.place.longitude}`,`_blank`)} class="marker-btn">{showRouteBtnText[this.props.nowLanguage]}</button>
+                        <button onClick={()=>window.open("http://"+this.props.place.url,"_blank")} class="marker-btn">{goToTheSiteBtnText[this.props.nowLanguage]}</button>
+                        <button onClick={()=>{this.props.toggleMarkerInfo(null,false);closeCurrentMarker(this.props.currentStep);}} class="marker-btn">{closeBtnText[this.props.nowLanguage]}</button>
+                    </div>
+                    <div class="div-to-make-flex-work">
+                        <h5 class="make-flex">{this.props.place.name}</h5>
+                    </div>
+                    <h6>{phonesText[this.props.nowLanguage]}</h6>
+                    {this.props.place.phones.map(this.eachPhone)}
+                    <h6>{scheduleText[this.props.nowLanguage]}</h6>
+                    {this.props.place.schedule.map(this.eachSchedule)}
+                </div>
     }
 }
 
@@ -852,8 +661,17 @@ class DescriptionOfStep extends React.Component{
     constructor(props){
         super(props);
         this.state= {
-            toShow: this.props.toShow
+            toShowMarkerInfo: false,
+            place: null
         }
+    }
+
+    componentWillReceiveProps = () =>{
+        this.setState({toShowMarkerInfo: false})
+    }
+
+    toggleMarkerInfo = (place,showB) => {
+            this.setState({place: place, toShowMarkerInfo: showB});
     }
 
     render(){
@@ -866,11 +684,38 @@ class DescriptionOfStep extends React.Component{
                     </div>
         }
         else{
-            return <div class="step-description">
-                        <HelpDescription/>
-                        <InfoAboutMarker/>
-                    </div>
+            if(this.state.toShowMarkerInfo){
+                return <div class="step-description">
+                            <HelpDescription
+                                classText="description-help-small"
+                                nowLanguage={this.props.nowLanguage}
+                                places={this.props.places}
+                                currentStep={this.props.currentStep}
+                                steps={this.props.steps}
+                                toggleMarkerInfo={this.toggleMarkerInfo}
+                            />
+                            <InfoAboutMarker
+                                nowLanguage={this.props.nowLanguage}
+                                currentStep={this.props.currentStep}
+                                place={this.state.place}
+                                toggleMarkerInfo={this.toggleMarkerInfo}
+                            />
+                        </div>
+            }
+            else{
+                return <div class="step-description">
+                            <HelpDescription
+                                classText="description-help"
+                                nowLanguage={this.props.nowLanguage}
+                                places={this.props.places}
+                                currentStep={this.props.currentStep}
+                                steps={this.props.steps}
+                                toggleMarkerInfo={this.toggleMarkerInfo}
+                            />
+                        </div>
+            }
         }
+
     }
 }
 
@@ -895,6 +740,8 @@ class SofaStep extends React.Component{
                         steps={this.props.steps}
                         currentStep={this.props.currentStep}/>
                     <DescriptionOfStep 
+                        nowLanguage={this.props.nowLanguage}
+                        places={this.props.places}
                         toShow={this.state.toShow} textSize={this.props.textSize}
                         steps={this.props.steps}
                         currentStep={this.props.currentStep}/>
@@ -926,7 +773,9 @@ class SofaHoldInfo extends React.Component{
                         <SofaStep 
                             textSize={this.props.textSize}
                             steps={this.props.steps}
-                            currentStep={this.props.currentStep}/>
+                            currentStep={this.props.currentStep}
+                            nowLanguage={this.props.nowLanguage}
+                            places={this.props.places}/>
                         <SofaMap/>
                     </div>
                 </section>
@@ -944,14 +793,11 @@ class SofaContent extends React.Component{
     }
 
     clickOnStep = (steps,cS) => {
-        $(".description-help").css("grid-column","1/3");
-        $(".div-to-remove").remove();
-        // this.setState({currentStep: cS});
         this.props.changeCurrentStep(cS);
-        console.log(steps)
-        setColorHeaderInfo(cS);//set color for header of info according to chosen step
-        setInfo(steps,cS);//set the info according to the step
-        fillMapWithPlaces(map,this.props.nowLanguage,cS,this.props.lat,this.props.lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
+        // console.log(steps)
+        // setColorHeaderInfo(cS);//set color for header of info according to chosen step
+        // setInfo(steps,cS);//set the info according to the step
+        this.props.fillMapWithPlaces(map,this.props.nowLanguage,cS,this.props.lat,this.props.lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
     }
 
     render(){
@@ -963,6 +809,8 @@ class SofaContent extends React.Component{
                             steps={this.props.steps}
                             clickOnStep={this.clickOnStep}/>
                         <SofaHoldInfo 
+                            nowLanguage={this.props.nowLanguage}
+                            places={this.props.places}
                             textSize={this.props.textSize}
                             steps={this.props.steps}
                             currentStep={this.props.currentStep}/>
@@ -1118,7 +966,8 @@ class App extends React.Component{
                 lat: 32.0852999,
                 lon: 34.78176759999999,
                 cityList: [],
-                currentCity: "null"
+                currentCity: "null",
+                places: []
             }
             this.getCityList(this.state.nowLanguage, this.state.currentStep);
         }
@@ -1145,7 +994,7 @@ class App extends React.Component{
             showLoading();
             setTitleText(lang);//set new title according to language you chose
             highlightLanguage(lang);//highlight the chosen language
-            fillMapWithPlaces(map,lang,this.state.currentStep,this.state.lat,this.state.lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+            this.fillMapWithPlaces(map,lang,this.state.currentStep,this.state.lat,this.state.lon,MIN_KM,MAX_KM,INC);//fill the map with markers
             if(map)
             hideLoading();
         }
@@ -1160,13 +1009,13 @@ class App extends React.Component{
                 let data = JSON.parse(xhr.response);
                 lang=="he"?setRightTextAlign():setLeftTextAlign();
                 let steps = data.steps;//get info about steps
-                console.log(steps)
+                // console.log(steps)
                 steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
                 this.setState({steps:steps});
-                console.log(this.state.steps);
+                // console.log(this.state.steps);
                 setTitleText(lang);//set new title according to language you chose
                 highlightLanguage(lang);//highlight the chosen language
-                fillMapWithPlaces(map,lang,this.state.currentStep,this.state.lat,this.state.lon,MIN_KM,MAX_KM,INC);//fill the map with markers
+                this.fillMapWithPlaces(map,lang,this.state.currentStep,this.state.lat,this.state.lon,MIN_KM,MAX_KM,INC);//fill the map with markers
                 if(map)
                 hideLoading();
             }.bind(this);
@@ -1200,6 +1049,107 @@ class App extends React.Component{
                 lon: lon
             });
         }
+
+        fillMapWithPlaces = (map,lang,step,lat,lon,min,max,inc) => {
+            if(map!=null){//if the map was initialized
+                let urlCurr = theUrl+`step/${lang}/${step+1}/area/${lat}/${lon}/${min}/${max}/${inc}`;//url request
+                // console.log(myMarker.getPosition());
+                console.log(urlCurr)
+                bounds = new google.maps.LatLngBounds();
+                bounds.extend(myMarker.getPosition());
+                let xhr = new XMLHttpRequest();
+                xhr.open("GET", urlCurr, true);
+                xhr.onload = function(e){
+                    let placesArr = JSON.parse(xhr.response);
+                    clearMap();//clear map from markers if threre are already some
+                    // console.log(placesArr)
+                    this.setState({places: placesArr})
+                    if(placesArr.length!=0){//if there are any places
+                        for(var i=0;i<placesArr.length;i++){
+                            let icon = {
+                                url: icons[step+1], // url
+                                scaledSize: new google.maps.Size(20, 30), // scaled size
+                                origin: new google.maps.Point(0,0), // origin
+                                anchor: new google.maps.Point(0, 0) // anchor
+                            };//set the icon for marker
+                            let marker = new google.maps.Marker({
+                                map: map,
+                                icon: icon,
+                                place: {
+                                placeId: placesArr[i].placeId,
+                                location: { lat: placesArr[i].latitude, lng: placesArr[i].longitude}
+                                },
+                                zIndex: 0
+                            });//set marker
+                            bounds.extend({ lat: placesArr[i].latitude, lng: placesArr[i].longitude});
+                            markers.push(marker);//push marker to gloabal array so that you could delete them in future or change icons
+        
+                        }
+                        map.fitBounds(bounds);
+                        // fillSofaAddresses(placesArr,lang,step);//fill the div with information about markers
+                    }
+                    else{
+                        let infoOfMarker = $(".info-of-marker");
+                        infoOfMarker.empty();
+                        $(".sofa-address").empty();
+                        console.log("no places found");
+                    }
+                    
+                    hideLoading();
+                }.bind(this);
+                xhr.send();
+            }
+            
+        }
+
+        successMap = (pos,lang,step) => {
+            currentCity = "0";
+            let lat = pos.coords.latitude;
+            let lon = pos.coords.longitude;
+            setMap(lat,lon,lang,step);
+            this.changeGlobalPosition(lat,lon);
+            this.setCurrentCity(lat+"|"+lon+"|0");
+            return [lat,lon];
+        }
+
+        errorMap = (err,lang,step) => {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+            if(app.state.currentCity=="null"){
+                let urlCurr = theUrl + `${lang}/city`;
+                $.ajax({
+                    url: urlCurr
+                })
+                .then(
+                    (data)=>{
+                        let cityList = data;
+                        let TelAviv = null;
+                        let indexCity = 0;
+                        TelAviv = data.find(
+                            (city,i)=>{
+                                if(city.name=="Tel Aviv"||city.name == "תל אביב"||city.name=="Тель-Авив"){
+                                    indexCity=i;
+                                    return city;
+                                }
+                            }
+                        );
+                        let currentCity = TelAviv.latitude+"|"+TelAviv.longitude;
+                        let lat = TelAviv.latitude;
+                        let lon = TelAviv.longitude;
+                        setMap(lat,lon,lang,step);
+                        // document.getElementsByClassName("the-list")[0].value = currentCity;
+                        hideLoading();
+                        this.changeGlobalPosition(lat,lon);
+                        this.setCurrentCity(lat+"|"+lon+"|"+indexCity);
+                        return [lat,lon];
+                    }
+                );
+            }
+            else{
+                document.getElementsByClassName("the-list")[0].value = currentCity;
+                return [currentCity.split("|")[0],currentCity.split("|")[2]];
+                hideLoading();
+            }
+        };
     
         render(){
             // console.log(this.setLanguage)
@@ -1223,6 +1173,8 @@ class App extends React.Component{
                             currentStep={this.state.currentStep}
                             lat={this.state.lat}
                             lon={this.state.lon}
+                            places={this.state.places}
+                            fillMapWithPlaces={this.fillMapWithPlaces}
                         />
                     </div>
         }
@@ -1247,7 +1199,6 @@ let init=()=>{
         console.log(e)
     }
     xhr.send();
-    console.log(app)
 }
 
 init();

@@ -453,6 +453,10 @@ _:-moz-tree-row(hover),.choose-step{
     grid-column: 1/3;
     overflow-y: scroll;
 }
+.description-help-small{
+    grid-column: 1;
+    overflow-y: scroll;
+}
 .info-of-marker{
     grid-column: 2;
     overflow-y: scroll;
