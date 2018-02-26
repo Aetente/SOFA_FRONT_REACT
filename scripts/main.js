@@ -1,3 +1,5 @@
+//TODO надо засунуть внешние функции в реакт
+
 const theUrl = "https://olimshelper.herokuapp.com/";//api
 const MIN_KM=1;
 const MAX_KM = 10;
@@ -103,8 +105,7 @@ let currentCity;
 let showTheInfo = false;
 let toConsole = true;
 
-
-//TODO rewrite everything from main to react
+//TODO эту функцию надо засунуть в реакт
 function main(){//intialise everything
     window.addEventListener( 'resize',
     function(){
@@ -114,11 +115,8 @@ function main(){//intialise everything
     setInfoHeight();
 }
 
-//TODO fix address error
-//TODO remake style appliance for info window and etc...
-//TODO make better logic
-
-function setInfoHeight(){
+//TODO эту функцию надо засунуть в реакт
+function setInfoHeight(){//
     if(window.innerWidth>767){
         document.getElementsByClassName("step-description")[0].setAttribute("style",`grid-template-rows: 
         ${(window.innerHeight-document.getElementsByClassName("step-description")[0].getBoundingClientRect().y-10)}px;`);
@@ -127,36 +125,39 @@ function setInfoHeight(){
     }
 }
 
+//TODO эту функцию надо засунуть в реакт
 function showLoading(){
-    $(".loading-window").show(0);
+    document.getElementsByClassName("loading-window")[0].style.display = "flex";
 }
 
+//TODO эту функцию надо засунуть в реакт
 function hideLoading(){
-    $(".loading-window").hide(100);
+    document.getElementsByClassName("loading-window")[0].style.display = "none";
 }
 
+//TODO эту функцию надо засунуть в реакт
 function setRightTextAlign(){
     if(document.getElementsByClassName("info-of-step")[0])
     document.getElementsByClassName("info-of-step")[0].style.textAlign = "right";
-    // $(".menu-item p").css("text-align","right");
-    
 }
 
+//TODO эту функцию надо засунуть в реакт
 function setLeftTextAlign(){
     if(document.getElementsByClassName("info-of-step")[0])
     document.getElementsByClassName("info-of-step")[0].style.textAlign = "left";
-    // $(".menu-item p").css("text-align","left");
 }
 
+//TODO эту функцию надо засунуть в реакт
 //highlight the chosen language
 function highlightLanguage(nowLanguage){
-    let langs = $(".changeLang");
+    let langs = document.getElementsByClassName("changeLang");
     for(var i=0; i< langs.length; i++){
         langs[i].style.color = "rgba(110,110,110,1)";
     }
-    $(`#${nowLanguage}`).css("color", "#00508c");
+    document.getElementById(`${nowLanguage}`).style.color = "#00508c";
 }
 
+//TODO эту функцию надо засунуть в реакт
 //set the site title to name according to language
 function setTitleText(nowLanguage){
     let title = document.getElementsByClassName("title-text")[0];
@@ -179,12 +180,14 @@ function setTitleText(nowLanguage){
     }
 }
 
+//TODO эту функцию надо засунуть в реакт
 function changePosition(lat,lon,lang,step){
     myMarker.setPosition({lat:lat,lng:lon});
     map.setCenter({lat:lat,lng:lon});
     app.fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);
 }
 
+//TODO эту функцию надо засунуть в реакт
 function setMap(lat,lon,lang,step){
     map = null;
     var icon = {
@@ -210,6 +213,7 @@ function setMap(lat,lon,lang,step){
     app.fillMapWithPlaces(map,lang,step,lat,lon,MIN_KM,MAX_KM,INC);//fill the map with markers
 }
 
+//TODO эту функцию надо засунуть в реакт
 function clearMap(){//clear markers
     if(markers.length>0){
         for(var i=0; i<markers.length; i++){
@@ -219,6 +223,7 @@ function clearMap(){//clear markers
     }
 }
 
+//TODO эту функцию надо засунуть в реакт
 function highlightMarker(n){//highlight the chosen marker
     for(let i=0; i<markers.length;i++){
         if(i!=n){//if it is not our marker
@@ -236,6 +241,7 @@ function highlightMarker(n){//highlight the chosen marker
     }
 }
 
+//TODO эту функцию надо засунуть в реакт
 function unhighlightMarkers(step){//unhilight all markers
     for(let i=0; i<markers.length;i++){
         var icon = {
@@ -249,10 +255,12 @@ function unhighlightMarkers(step){//unhilight all markers
     }
 }
 
+//TODO эту функцию надо засунуть в реакт
 function closeCurrentMarker(step){//close the clicked marker
     unhighlightMarkers(step);
 }
 
+//TODO эту функцию нужно назначить функции, которая будет внутри реакта
 function initMap(){//initialize the google map
     bounds = new google.maps.LatLngBounds();
     geocoder = new google.maps.Geocoder;//get the geocoder to decode placeIds in further
@@ -294,7 +302,6 @@ class Title extends React.Component{
             title: "10 STEPS OF A NEW REPRESENTATIVE",
             currentCity: this.props.currentCity
         }
-        //TODO update title
     }
 
     updateTitle = (newTitle) => {this.setState({title: newTitle})}
@@ -397,9 +404,6 @@ class CityList extends React.Component{
         }
     }
 
-    //TODO build list according to names
-    //TODO set clicks
-
     eachCity = (city,i) => {return <option value = {this.state.cityValueList[i]}>{city}</option>};
 
     upadateCityList = (newCityList, newCityValues) =>{
@@ -432,8 +436,6 @@ class Languages extends React.Component{
         super(props);
     }
 
-    //TODO set clicks
-
     render(){
         return <div class = "languages">
                         <p><a class="changeLang pointable" onClick={()=>{this.props.setLanguage("en")}} id="en">EN</a></p>
@@ -449,8 +451,6 @@ class TextSize extends React.Component{
     constructor(props){
         super(props);
     }
-
-    //TODO set clicks
 
     render(){
         return <div class="textSize">
@@ -472,9 +472,6 @@ class SofaStepHeader extends React.Component{
         this.onInfoBtnClick = this.onInfoBtnClick.bind(this);
         // this.updateStepHeadName = this.updateStepHeadName.bind(this);
     }
-
-    //TODO update step head name
-    //TODO set clicks
     updateInfoBtnText = () =>{this.setState({nowInfoIndex: (++this.state.nowInfoIndex)%2})};
 
     onInfoBtnClick(){
@@ -501,8 +498,6 @@ class InfoOfStep extends React.Component{
             toShow: this.props.toShow
         }
     }
-
-    //TODO update state values
 
     updateDescriptionText = (newDescriptionText) =>{this.setState({descriptionText: newDescriptionText})};
     updateStepNeedText = (newStepNeedText) => {this.setState({stepNeedText: newStepNeedText})};
@@ -579,7 +574,7 @@ class HelpDescription extends React.Component{
             let aC = res[0].address_components;
             return `${aC[2].long_name}, ${aC[1].short_name}, ${aC[0].short_name}`;
         }
-        else{//TODO what should happen when you dont get the address(it happens a lot more frequently than expected)
+        else{
             console.log(status);
             return "address error";
         }
@@ -836,9 +831,6 @@ class SofaHorizScrollMenuBody extends React.Component{
         }
     }
 
-    //TODO update step names
-    //TODO set clicks
-
     eachStepName = (step,i) =>{
         // onClick={()=>{this.props.clickOnStep(this.state.stepNames,i+1)}}
         return <a href="#" id={`item${i+1}`} class=" menu-item" onClick={()=>{this.props.clickOnStep(this.props.steps,i)}}>
@@ -901,19 +893,11 @@ class HorizScrollButtonHolder extends React.Component{
 
     clickLeft = () => {
             this.scrollByLeft(document.getElementsByClassName("sofa-horiz")[0],271,500);
-            // $('.sofa-horiz').animate({
-            //     scrollLeft: '-=271'
-            // }, 500, 'linear');
     }
 
     clickRight = () =>{
         this.scrollByRight(document.getElementsByClassName("sofa-horiz")[0],271,500);
-        // $('.sofa-horiz').animate({
-        //     scrollLeft: '+=271'
-        // }, 500, 'linear');
     }
-
-    //TODO set clicks
 
     render(){
         return <section class="scrollbutton-holder">
@@ -1043,7 +1027,6 @@ class App extends React.Component{
 
         getAndSetDataByLang = (lang)=>{
             showLoading();
-            $(".div-to-remove").remove();
             let urlCurr = theUrl+lang;//url to get info by language
             let xhr = new XMLHttpRequest()
             xhr.open("GET", urlCurr, true);
@@ -1126,9 +1109,6 @@ class App extends React.Component{
                         // fillSofaAddresses(placesArr,lang,step);//fill the div with information about markers
                     }
                     else{
-                        let infoOfMarker = $(".info-of-marker");
-                        infoOfMarker.empty();
-                        $(".sofa-address").empty();
                         console.log("no places found");
                     }
                     
