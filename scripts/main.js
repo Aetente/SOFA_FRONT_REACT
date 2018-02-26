@@ -13,8 +13,6 @@ let stepColors= [
     "#ba002b",
     "#50008c"
 ];//colors for steps
-let lat = 0;//latitude
-let lon = 0;//longitude
 let map = null;//google maps
 let myMarker = null;//the marker which shows your location
 let markers = [];//markers on map
@@ -103,6 +101,7 @@ var options = {
 let cityList = [];//the list of cities which will appear when geolocation is locked
 let currentCity;
 let showTheInfo = false;
+let toConsole = true;
 
 
 //TODO rewrite everything from main to react
@@ -302,7 +301,8 @@ class Title extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            title: "10 STEPS OF A NEW REPRESENTATIVE"
+            title: "10 STEPS OF A NEW REPRESENTATIVE",
+            currentCity: this.props.currentCity
         }
         //TODO update title
     }
@@ -317,61 +317,58 @@ class Title extends React.Component{
 class LocationList extends React.Component{
     constructor(props){
         super(props);
-        // console.log("constructor city list")
         this.state = {
             currentCityIndex: this.props.currentCity.split("|")[2],
-            currentCity: this.props.currentCity
+            currentCity: this.props.currentCity.split("|")[0]+"|"+this.props.currentCity.split("|")[1]
         }
-        // console.log("constructor city list")
     }
 
     onCityChange = (e,lang,step) =>{
-        // console.log("onchange")
         let theCurrentCity = e.target.value;
+        let theCurrentCityParts = theCurrentCity.split("|");
+        let theCurrentCityWithoutI = theCurrentCityParts[0]+"|"+theCurrentCityParts[1];
         if( theCurrentCity!="0"){
             let coords = theCurrentCity.split("|");
             let lat = +coords[0];
             let lon = +coords[1];
             this.props.changeGlobalPosition(lat,lon);
-            console.log(theCurrentCity)
             changePosition(lat, lon,lang,step);
             this.setState({
-                currentCity: theCurrentCity,
+                currentCity: theCurrentCityWithoutI,
                 currentCityIndex: +coords[2]
             });
         }
         else{
+            console.log(this.props)
             navigator.geolocation.getCurrentPosition(
-                function(pos){return this.successMap(pos,lang,step)},
-                function(err){return this.errorMap(err,lang,step)}, 
+                function(pos){return this.props.successMap(pos,lang,step)}.bind(this),
+                function(err){return this.props.errorMap(err,lang,step)}.bind(this), 
                 options);//get location
+                this.setState({currentCity:"0"})
         }
     }
 
     eachCity = (city,i) =>{
         let strCoords = city.latitude+"|"+city.longitude;
         let strCoordsI = strCoords+"|"+i;
-        // if(strCoords==this.state.currentCity){
-        //     this.setState({currentCityIndex: i});
-        // }
-        // console.log(strCoords+" : "+this.props.currentCity)
-        if(strCoords==this.props.currentCity){
-            console.log(<option selected value={strCoordsI} name={city.name}>{city.name}</option>)
-            return <option selected value={strCoordsI} name={city.name}>{city.name+"!!!"}</option>
+        let currentCityParts = this.state.currentCity.split("|");
+        let currentCityWithoutI = currentCityParts[0]+"|"+currentCityParts[1];
+        if(strCoords==currentCityWithoutI){
+            return <option selected value={strCoords} name={city.name}>{city.name}</option>
         }
         else{
-            return <option value={strCoordsI} name={city.name}>{city.name}</option>
+            return <option value={strCoords} name={city.name}>{city.name}</option>
         }
     }
 
     render(){
-        // console.log("list of cities")
-        // console.log(this.props.currentCity)
-        if(this.state.currentCity=="null"){
+        
+        if(this.state.currentCity=="null|undefined"){
+            
             return <div class="hold-list-div">
                         <div class="control-list-div">
                             <select 
-                                value={this.props.currentCity}
+                                value={this.props.currentCity.split("|")[0]+"|"+this.props.currentCity.split("|")[1]}
                                 class="the-list"
                                 onChange={((e)=>this.onCityChange(e,this.props.nowLanguage,this.props.currentStep))}
                             >
@@ -382,6 +379,8 @@ class LocationList extends React.Component{
                     </div>
         }
         else{
+            console.log("STATE")
+            console.log(this.state.currentCity)
             return <div class="hold-list-div">
             <div class="control-list-div">
                 <select 
@@ -424,6 +423,8 @@ class CityList extends React.Component{
         return <div class="hold-search margin-to-zero">
                     <div class="control-list-div">
                         <LocationList 
+                            successMap={this.props.successMap}
+                            errorMap={this.props.errorMap}
                             cityList={this.props.cityList}
                             currentCity={this.props.currentCity}
                             changeGlobalPosition={this.props.changeGlobalPosition}
@@ -444,7 +445,6 @@ class Languages extends React.Component{
     //TODO set clicks
 
     render(){
-        // console.log(this.props.setLanguage)
         return <div class = "languages">
                         <p><a class="changeLang pointable" onClick={()=>{this.props.setLanguage("en")}} id="en">EN</a></p>
                         <p><a class="changeLang pointable" onClick={()=>{this.props.setLanguage("ru")}} id="ru">RU</a></p>
@@ -488,16 +488,13 @@ class SofaStepHeader extends React.Component{
     updateInfoBtnText = () =>{this.setState({nowInfoIndex: (++this.state.nowInfoIndex)%2})};
 
     onInfoBtnClick(){
-        // console.log("click");
         showTheInfo = !showTheInfo;
         // toggleShowInfo(showTheInfo);
         this.props.showInfoCallback();
         this.updateInfoBtnText();
-        // console.log(this.state.stepHeadName);
     }
 
     render(){
-        // console.log(this.props.steps)
         return <div class="step-header" style={{backgroundColor:stepColors[this.props.currentStep]}}>
                     <img class="step-img" src={"images/step_0"+(this.props.currentStep+1)+".png"}/>
                     <p class="step-head">{this.props.steps[this.props.currentStep].title.toUpperCase()}</p>
@@ -561,32 +558,32 @@ class HelpDescription extends React.Component{
         return false;
     }
 
+    async gCL(geocoder,placesArr){
+        //FIXME first you should fill placesArr but now it updates everytime it gets address 
+        let setPlacesArr = (pA)=> placesArr=pA;
+        this.props.places.forEach((place) => {
+            geocoder.geocode({"placeId":place.placeId},//decode the placeId to get address
+                    function(what, res,status){
+                        placesArr.push(this.geocodeFunc(what, res,status));
+                        this.setState({addressList: placesArr})
+                    }.bind(this,placesArr)
+                );
+            
+            }, this);
+    }
+
     componentDidUpdate = (prevProps,prevState) =>{
         if(this.compareAddressLists(this.props.places,prevProps.places)){
             let placesArr = [];
             let hoho = async () => {
-                console.log("async statr")
-                console.log(this.props)
-                this.props.places.forEach((place) => {
-                    geocoder.geocode({"placeId":place.placeId},//decode the placeId to get address
-                        function(res, status){
-                            console.log(status)
-                            placesArr.push(this.geocodeFunc(res,status));
-                            console.log(placesArr)
-                        }.bind(this,placesArr)
-                    );
-                }, this);
-                console.log("placesArr")
-                console.log(placesArr)
-                this.setState({addressList: placesArr})
+                this.gCL(geocoder,placesArr);
+                // this.setState({addressList: placesArr})
             };
             hoho();
         }
     }
 
-    geocodeFunc = (res,status) => {
-        console.log(status)
-        console.log(res)
+    geocodeFunc = (what, res,status) => {
         if(status=="OK"){
             let aC = res[0].address_components;
             return `${aC[2].long_name}, ${aC[1].short_name}, ${aC[0].short_name}`;
@@ -607,8 +604,13 @@ class HelpDescription extends React.Component{
                 </div>
     }
 
+    async asyncRender(){
+        return <div class={this.props.classText}>
+            {async ()=>this.props.places.map(this.eachAddress)}
+        </div>
+    }
+
     render(){
-        console.log(this.props)
         return <div class={this.props.classText}>
                     {this.props.places.map(this.eachAddress)}
                 </div>
@@ -794,14 +796,10 @@ class SofaContent extends React.Component{
 
     clickOnStep = (steps,cS) => {
         this.props.changeCurrentStep(cS);
-        // console.log(steps)
-        // setColorHeaderInfo(cS);//set color for header of info according to chosen step
-        // setInfo(steps,cS);//set the info according to the step
         this.props.fillMapWithPlaces(map,this.props.nowLanguage,cS,this.props.lat,this.props.lon,MIN_KM,MAX_KM,INC);//fill the map with markers according to the step
     }
 
     render(){
-        // console.log("SofaContent : "+this.state.currentStep)
         return <div class="sofa-row main-section">
                     <div class="sofa-content">
                         <div class="empty_column"></div>
@@ -859,8 +857,6 @@ class SofaHorizScrollMenuBody extends React.Component{
     }
 
     render(){
-        // console.log("drawing horiz scroll");
-        // console.log(this.props.steps)
         return <section class="sofa-horiz">
                 {this.props.steps.map(this.eachStepName)}
                 <a id="item-filler"></a>
@@ -911,6 +907,8 @@ class CasualMenu extends React.Component{
                     <IconImage/>
                     <Title/>
                     <CityList 
+                        successMap={this.props.successMap}
+                        errorMap={this.props.errorMap}
                         cityList={this.props.cityList}
                         currentCity={this.props.currentCity}
                         changeGlobalPosition={this.props.changeGlobalPosition} 
@@ -928,9 +926,10 @@ class SofaHeader extends React.Component{
     }
 
     render(){
-        // console.log(this.props.setLanguage)
         return <header class="sofa-header">
                     <CasualMenu  
+                        successMap={this.props.successMap}
+                        errorMap={this.props.errorMap}
                         cityList={this.props.cityList}
                         currentCity={this.props.currentCity}
                         changeGlobalPosition={this.props.changeGlobalPosition}
@@ -1009,10 +1008,8 @@ class App extends React.Component{
                 let data = JSON.parse(xhr.response);
                 lang=="he"?setRightTextAlign():setLeftTextAlign();
                 let steps = data.steps;//get info about steps
-                // console.log(steps)
                 steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
                 this.setState({steps:steps});
-                // console.log(this.state.steps);
                 setTitleText(lang);//set new title according to language you chose
                 highlightLanguage(lang);//highlight the chosen language
                 this.fillMapWithPlaces(map,lang,this.state.currentStep,this.state.lat,this.state.lon,MIN_KM,MAX_KM,INC);//fill the map with markers
@@ -1053,8 +1050,6 @@ class App extends React.Component{
         fillMapWithPlaces = (map,lang,step,lat,lon,min,max,inc) => {
             if(map!=null){//if the map was initialized
                 let urlCurr = theUrl+`step/${lang}/${step+1}/area/${lat}/${lon}/${min}/${max}/${inc}`;//url request
-                // console.log(myMarker.getPosition());
-                console.log(urlCurr)
                 bounds = new google.maps.LatLngBounds();
                 bounds.extend(myMarker.getPosition());
                 let xhr = new XMLHttpRequest();
@@ -1062,7 +1057,6 @@ class App extends React.Component{
                 xhr.onload = function(e){
                     let placesArr = JSON.parse(xhr.response);
                     clearMap();//clear map from markers if threre are already some
-                    // console.log(placesArr)
                     this.setState({places: placesArr})
                     if(placesArr.length!=0){//if there are any places
                         for(var i=0;i<placesArr.length;i++){
@@ -1116,33 +1110,32 @@ class App extends React.Component{
             console.warn(`ERROR(${err.code}): ${err.message}`);
             if(app.state.currentCity=="null"){
                 let urlCurr = theUrl + `${lang}/city`;
-                $.ajax({
-                    url: urlCurr
-                })
-                .then(
-                    (data)=>{
-                        let cityList = data;
-                        let TelAviv = null;
-                        let indexCity = 0;
-                        TelAviv = data.find(
-                            (city,i)=>{
-                                if(city.name=="Tel Aviv"||city.name == "תל אביב"||city.name=="Тель-Авив"){
-                                    indexCity=i;
-                                    return city;
-                                }
+                let xhr = new XMLHttpRequest();
+                xhr.open("GET", urlCurr, true);
+                xhr.onload = function(e){
+                    let data = JSON.parse(xhr.response)
+                    let cityList = data;
+                    let TelAviv = null;
+                    let indexCity = 0;
+                    TelAviv = data.find(
+                        (city,i)=>{
+                            if(city.name=="Tel Aviv"||city.name == "תל אביב"||city.name=="Тель-Авив"){
+                                indexCity=i;
+                                return city;
                             }
-                        );
-                        let currentCity = TelAviv.latitude+"|"+TelAviv.longitude;
-                        let lat = TelAviv.latitude;
-                        let lon = TelAviv.longitude;
-                        setMap(lat,lon,lang,step);
-                        // document.getElementsByClassName("the-list")[0].value = currentCity;
-                        hideLoading();
-                        this.changeGlobalPosition(lat,lon);
-                        this.setCurrentCity(lat+"|"+lon+"|"+indexCity);
-                        return [lat,lon];
-                    }
-                );
+                        }
+                    );
+                    let currentCity = TelAviv.latitude+"|"+TelAviv.longitude;
+                    let lat = TelAviv.latitude;
+                    let lon = TelAviv.longitude;
+                    setMap(lat,lon,lang,step);
+                    // document.getElementsByClassName("the-list")[0].value = currentCity;
+                    hideLoading();
+                    this.changeGlobalPosition(lat,lon);
+                    this.setCurrentCity(lat+"|"+lon+"|"+indexCity);
+                    return [lat,lon];
+                }.bind(this)
+                    xhr.send();
             }
             else{
                 document.getElementsByClassName("the-list")[0].value = currentCity;
@@ -1152,10 +1145,13 @@ class App extends React.Component{
         };
     
         render(){
-            // console.log(this.setLanguage)
+            if(toConsole)
+            console.log("APP");
             return <div>
                         <LoadingWindow/>
                         <SofaHeader 
+                            successMap={this.successMap}
+                            errorMap={this.errorMap}
                             cityList={this.state.cityList}
                             currentCity={this.state.currentCity}
                             changeGlobalPosition={this.changeGlobalPosition}
@@ -1187,7 +1183,6 @@ let init=()=>{
     xhr.onload = function(e){
         let data = JSON.parse(xhr.response);
         let steps = data.steps;//get info about steps
-        // console.log(steps)
         ReactDOM.render(
             <App ref={(child)=>app=child} steps={steps}/>,
             document.getElementById('root')
