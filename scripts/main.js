@@ -43,17 +43,17 @@ let closeBtnText = {
     // fr: "FERMER"
 };
 let showRouteBtnText = {
-    en: "SHOW ROUTE",
-    ru: "ПОКАЗАТЬ ПУТЬ",
-    he: "להראות את הדרך",
-    fr: "MONTRER LE CHEMIN"
+    en: "ROUTE",
+    ru: "МАРШРУТ",
+    he: "דרך",
+    fr: "ROUTE"
 };
 let goToTheSiteBtnText = {
     
-    en: "GO TO THE SITE",
-    ru: "ПЕРЕЙТИ К САЙТУ",
-    he: "עבור אל האתר",
-    fr: "ALLER AU SITE"
+    en: "SITE",
+    ru: "САЙТ",
+    he: "האתר",
+    fr: "SITE WEB"
 };
 let phonesText = {
     en: "PHONES",
@@ -106,17 +106,7 @@ let toConsole = true;
 
 //TODO rewrite everything from main to react
 function main(){//intialise everything
-    $('.scroll-back').click(function () {
-        $('.sofa-horiz').animate({
-            scrollLeft: '-=271'
-        }, 500, 'linear');
-    });//scroll steps back
-    $('.scroll-forward').click(function () {
-        $('.sofa-horiz').animate({
-            scrollLeft: '+=271'
-        }, 500, 'linear');
-    });//scroll steps forward
-    $(window).on( 'resize',
+    window.addEventListener( 'resize',
     function(){
         google.maps.event.trigger( map, 'resize' );
     }
@@ -130,8 +120,8 @@ function main(){//intialise everything
 
 function setInfoHeight(){
     if(window.innerWidth>767){
-        document.getElementsByClassName("step-description")[0].style.gridTemplateColums = 
-        (window.innerHeight-document.getElementsByClassName("step-description")[0].getBoundingClientRect().y-10)+"px";
+        document.getElementsByClassName("step-description")[0].setAttribute("style",`grid-template-rows: 
+        ${(window.innerHeight-document.getElementsByClassName("step-description")[0].getBoundingClientRect().y-10)}px;`);
         document.getElementsByClassName("sofa-map")[0].style.height = 
         (window.innerHeight-document.getElementsByClassName("sofa-map")[0].getBoundingClientRect().y-10)+"px";
     }
@@ -540,6 +530,7 @@ class HelpDescription extends React.Component{
 
     onAddressClick = (place,i)=>{
         this.props.toggleMarkerInfo(place,true);
+        closeCurrentMarker(this.props.currentStep);
         highlightMarker(i);
     }
 
@@ -870,12 +861,64 @@ class HorizScrollButtonHolder extends React.Component{
         super(props);
     }
 
+    scrollByLeft = (element, by, duration) => {
+        if (duration <= 0){
+            console.log("DURATION OUT")
+            return;
+        }
+        var perTick = by / duration * 10;
+        let that = this
+        setTimeout(function() {
+            console.log(by)
+            element.scrollLeft -= perTick;
+            by-=perTick;
+            if (by<=0){
+                console.log("BY OUT")
+                return;
+            }
+            that.scrollByLeft(element, by, duration-10);
+        }, 10);
+    }
+
+    scrollByRight = (element, by, duration) => {
+        if (duration <= 0){
+            console.log("DURATION OUT")
+            return;
+        }
+        var perTick = by / duration * 10;
+        let that = this;
+        setTimeout(function() {
+            console.log(by)
+            element.scrollLeft += perTick;
+            by-=perTick;
+            if (by<=0){
+                console.log("BY OUT")
+                return;
+            }
+            that.scrollByRight(element, by, duration-10);
+        }, 10);
+    }
+
+    clickLeft = () => {
+            this.scrollByLeft(document.getElementsByClassName("sofa-horiz")[0],271,500);
+            // $('.sofa-horiz').animate({
+            //     scrollLeft: '-=271'
+            // }, 500, 'linear');
+    }
+
+    clickRight = () =>{
+        this.scrollByRight(document.getElementsByClassName("sofa-horiz")[0],271,500);
+        // $('.sofa-horiz').animate({
+        //     scrollLeft: '+=271'
+        // }, 500, 'linear');
+    }
+
     //TODO set clicks
 
     render(){
         return <section class="scrollbutton-holder">
-                    <a class="scroll-back pointable"><h1>{"<"}</h1></a>
-                    <a class="scroll-forward pointable"><h1>{">"}</h1></a>
+                    <a class="scroll-back pointable" onClick={this.clickLeft}><h1>{"<"}</h1></a>
+                    <a class="scroll-forward pointable" onClick={this.clickRight}><h1>{">"}</h1></a>
                 </section>
     }
 }
