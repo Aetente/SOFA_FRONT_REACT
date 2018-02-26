@@ -376,8 +376,6 @@ class LocationList extends React.Component{
                     </div>
         }
         else{
-            console.log("STATE")
-            console.log(this.state.currentCity)
             return <div class="hold-list-div">
             <div class="control-list-div">
                 <select 
@@ -507,7 +505,7 @@ class InfoOfStep extends React.Component{
     }
 
     render(){
-        return <div class="info-of-step"  style={{"font-size":this.props.textSize+"em"}}>
+        return <div  class={"info-of-step "+this.props.infoTextClass}  style={{"font-size":this.props.textSize+"em"}}>
                     <div class="description-text">{this.props.steps[this.props.currentStep].description}</div>
                     <div class="step-need">{this.props.steps[this.props.currentStep].need}</div>
                 </div>
@@ -666,6 +664,7 @@ class DescriptionOfStep extends React.Component{
         if(this.props.toShow){
             return <div class="step-description">
                         <InfoOfStep 
+                            infoTextClass={this.props.infoTextClass}
                             textSize={this.props.textSize}
                             steps={this.props.steps}
                             currentStep={this.props.currentStep}/>
@@ -683,6 +682,7 @@ class DescriptionOfStep extends React.Component{
                                 toggleMarkerInfo={this.toggleMarkerInfo}
                             />
                             <InfoAboutMarker
+                                
                                 nowLanguage={this.props.nowLanguage}
                                 currentStep={this.props.currentStep}
                                 place={this.state.place}
@@ -728,6 +728,7 @@ class SofaStep extends React.Component{
                         steps={this.props.steps}
                         currentStep={this.props.currentStep}/>
                     <DescriptionOfStep 
+                        infoTextClass={this.props.infoTextClass}
                         nowLanguage={this.props.nowLanguage}
                         places={this.props.places}
                         toShow={this.state.toShow} textSize={this.props.textSize}
@@ -759,6 +760,7 @@ class SofaHoldInfo extends React.Component{
         return <section class="hold-info main-section">
                     <div class="the-info">
                         <SofaStep 
+                            infoTextClass={this.props.infoTextClass}
                             textSize={this.props.textSize}
                             steps={this.props.steps}
                             currentStep={this.props.currentStep}
@@ -793,6 +795,7 @@ class SofaContent extends React.Component{
                             steps={this.props.steps}
                             clickOnStep={this.clickOnStep}/>
                         <SofaHoldInfo 
+                            infoTextClass={this.props.infoTextClass}
                             nowLanguage={this.props.nowLanguage}
                             places={this.props.places}
                             textSize={this.props.textSize}
@@ -855,17 +858,14 @@ class HorizScrollButtonHolder extends React.Component{
 
     scrollByLeft = (element, by, duration) => {
         if (duration <= 0){
-            console.log("DURATION OUT")
             return;
         }
         var perTick = by / duration * 10;
         let that = this
         setTimeout(function() {
-            console.log(by)
             element.scrollLeft -= perTick;
             by-=perTick;
             if (by<=0){
-                console.log("BY OUT")
                 return;
             }
             that.scrollByLeft(element, by, duration-10);
@@ -874,17 +874,14 @@ class HorizScrollButtonHolder extends React.Component{
 
     scrollByRight = (element, by, duration) => {
         if (duration <= 0){
-            console.log("DURATION OUT")
             return;
         }
         var perTick = by / duration * 10;
         let that = this;
         setTimeout(function() {
-            console.log(by)
             element.scrollLeft += perTick;
             by-=perTick;
             if (by<=0){
-                console.log("BY OUT")
                 return;
             }
             that.scrollByRight(element, by, duration-10);
@@ -993,7 +990,8 @@ class App extends React.Component{
                 lon: 34.78176759999999,
                 cityList: [],
                 currentCity: "null",
-                places: []
+                places: [],
+                infoTextClass: "western"
             }
             this.getCityList(this.state.nowLanguage, this.state.currentStep);
         }
@@ -1032,7 +1030,7 @@ class App extends React.Component{
             xhr.open("GET", urlCurr, true);
             xhr.onload = function(e){
                 let data = JSON.parse(xhr.response);
-                lang=="he"?setRightTextAlign():setLeftTextAlign();
+                lang=="he"?this.setState({infoTextClass:"eastern"}):this.setState({infoTextClass:"western"});
                 let steps = data.steps;//get info about steps
                 steps.sort((a,b)=>a.numberOfStep-b.numberOfStep);//sort the array of objects, because steps are not in the right order
                 this.setState({steps:steps});
@@ -1184,6 +1182,7 @@ class App extends React.Component{
                             currentStep={this.state.currentStep}
                         />
                         <SofaContent 
+                            infoTextClass={this.state.infoTextClass}
                             changeCurrentStep = {this.changeCurrentStep}
                             nowLanguage={this.state.nowLanguage}
                             textSize={this.state.textSize}

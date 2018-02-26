@@ -574,3 +574,11 @@ _:-moz-tree-row(hover),.choose-step{
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
 }
+
+.eastern{
+    text-align: right;
+}
+
+.western{
+    text-align: left;
+}
