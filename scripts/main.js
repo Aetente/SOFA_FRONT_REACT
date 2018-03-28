@@ -44,12 +44,14 @@ let closeBtnText = {
     // he: "לסגור",
     // fr: "FERMER"
 };
+let closeImg =  'images/ic_action_close.png';
 let showRouteBtnText = {
     en: "ROUTE",
     ru: "МАРШРУТ",
     he: "דרך",
     fr: "ROUTE"
 };
+let showRouteImg = 'images/ic_action_navigate.png';
 let goToTheSiteBtnText = {
 
     en: "SITE",
@@ -57,6 +59,7 @@ let goToTheSiteBtnText = {
     he: "האתר",
     fr: "SITE WEB"
 };
+let goToTheSiteImg = 'images/ic_action_link.png'
 let phonesText = {
     en: "PHONES",
     ru: "ТЕЛЕФОНЫ",
@@ -522,15 +525,15 @@ class InfoAboutMarker extends React.Component {
     render() {
         return <div class="info-of-marker">
             <div class="marker-holder">
-                <button
+                <img
                     onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&origin=${myMarker.getPosition().lat()},${myMarker.getPosition().lng()}&destination=${this.props.place.latitude},${this.props.place.longitude}`, `_blank`)}
-                    class="marker-btn">{showRouteBtnText[this.props.nowLanguage]}</button>
-                <button onClick={() => window.open("http://" + this.props.place.url, "_blank")}
-                        class="marker-btn">{goToTheSiteBtnText[this.props.nowLanguage]}</button>
-                <button onClick={() => {
+                    class="marker-btn" src={showRouteImg} alt={showRouteBtnText[this.props.nowLanguage]} />
+                <img onClick={() => window.open("http://" + this.props.place.url, "_blank")}
+                        class="marker-btn" src={goToTheSiteImg} alt={goToTheSiteBtnText[this.props.nowLanguage]}/>
+                <img onClick={() => {
                     this.props.toggleMarkerInfo(null, false);
                     this.props.closeCurrentMarker(this.props.currentStep);
-                }} class="marker-btn">{closeBtnText[this.props.nowLanguage]}</button>
+                }} class="marker-btn pointable" src={closeImg} alt={closeBtnText[this.props.nowLanguage]}/>
             </div>
             <div class="div-to-make-flex-work">
                 <h5 class="make-flex">{this.props.place.name}</h5>

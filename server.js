@@ -14,4 +14,4 @@ ehpp.get('/',function(req,res){
     });
 ehpp.listen(8080);
 
-console.log('Port 8080 is my city');
+console.log('Go to localhost:8080');
